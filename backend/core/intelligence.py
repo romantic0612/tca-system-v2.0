@@ -306,7 +306,7 @@ def record_trigger(cursor, student_id, trigger, error_type, error_streak):
     return cursor.lastrowid
 
 
-def apply_group_strategy(cursor, student_id, experiment_group, current_agent, trigger, trigger_event_id):
+def apply_group_strategy(cursor, student_id, experiment_group, current_agent, trigger, trigger_event_id, consecutive_correct=0):
     decision = {
         "agent": current_agent or "Guide",
         "switched": False,
@@ -332,13 +332,33 @@ def apply_group_strategy(cursor, student_id, experiment_group, current_agent, tr
                 "UPDATE student_states SET current_agent = ?, updated_at = ? WHERE student_id = ?",
                 ("Guide", datetime.now().isoformat(), student_id),
             )
-        decision["explanation"] = "系统提示：我发现你可能卡在关键概念上。先写出已知条件，再一步步推导。"
+        if trigger["triggered"]:
+            decision["explanation"] = "系统提示：我发现你可能卡在关键概念上。先写出已知条件，再一步步推导。"
         decision["mode_note"] = "EXP组：提供解释提示，不自动切换。"
         return decision
 
     if experiment_group == "AI-AUTO":
-        decision["explanation"] = "系统提示：检测到学习困难，已切换为 Tutor 模式，接下来会给出更直接的分步提示。"
+        if current_agent == "Tutor" and consecutive_correct >= 3:
+            decision["agent"] = "Guide"
+            decision["switched"] = True
+            decision["explanation"] = "系统提示：你已经连续几轮表现稳定，系统已回切为 Guide 模式，接下来会继续引导你自主思考。"
+            cursor.execute(
+                "UPDATE student_states SET current_agent = ?, last_trigger_level = ?, updated_at = ? WHERE student_id = ?",
+                ("Guide", "recovery", datetime.now().isoformat(), student_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO agent_switches
+                (student_id, from_agent, to_agent, switch_reason, triggered_by, trigger_event_id, created_at)
+                VALUES (?, ?, ?, ?, 'auto_recovery', ?, ?)
+                """,
+                (student_id, "Tutor", "Guide", "consecutive_correct>=3", trigger_event_id, datetime.now().isoformat()),
+            )
+            decision["mode_note"] = "AI-AUTO组：连续正确后自动回切 Guide。"
+            return decision
+
         if trigger["triggered"] and current_agent != "Tutor":
+            decision["explanation"] = "系统提示：检测到学习困难，已切换为 Tutor 模式，接下来会给出更直接的分步提示。"
             decision["agent"] = "Tutor"
             decision["switched"] = True
             cursor.execute(
@@ -353,6 +373,8 @@ def apply_group_strategy(cursor, student_id, experiment_group, current_agent, tr
                 """,
                 (student_id, current_agent, "Tutor", trigger["trigger_level"], trigger_event_id, datetime.now().isoformat()),
             )
+        elif trigger["triggered"]:
+            decision["explanation"] = "系统提示：检测到学习困难，当前保持 Tutor 模式，继续给你更直接的分步提示。"
         decision["mode_note"] = "AI-AUTO组：触发后自动切换 Agent。"
         return decision
 

@@ -164,6 +164,7 @@ def submit_answer():
             state['current_agent'],
             trigger,
             trigger_event_id,
+            state.get('consecutive_correct', 0),
         )
         record_evaluation(cursor, student_id, question_id, answer, evaluation)
 
@@ -332,6 +333,7 @@ def chat():
             state_row['current_agent'] or agent,
             trigger,
             trigger_event_id,
+            state_row['consecutive_correct'] or 0,
         )
         agent = decision['agent']
 
