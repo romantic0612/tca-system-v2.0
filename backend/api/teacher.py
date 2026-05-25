@@ -368,14 +368,30 @@ def get_event_detail():
             ORDER BY created_at ASC
             LIMIT 50
         ''', (student_id, active_question, active_question))
+        rows = cursor.fetchall()
+        message_question_id = active_question
+        if not rows:
+            cursor.execute('''
+                SELECT agent_name, message_type, content, created_at, question_id
+                FROM chat_messages
+                WHERE student_id = ?
+                ORDER BY created_at DESC
+                LIMIT 50
+            ''', (student_id,))
+            fallback_rows = list(reversed(cursor.fetchall()))
+            rows = fallback_rows
+            if fallback_rows:
+                message_question_id = fallback_rows[-1]['question_id'] or active_question
+
         messages = [
             {
                 'agent': row['agent_name'],
                 'type': row['message_type'],
                 'content': row['content'],
                 'time': row['created_at'],
+                'question_id': row['question_id'] if 'question_id' in row.keys() else message_question_id,
             }
-            for row in cursor.fetchall()
+            for row in rows
         ]
 
         conn.close()
@@ -400,7 +416,7 @@ def get_event_detail():
                 'last_error_type': student['last_error_type'],
                 'last_trigger_level': student['last_trigger_level'],
             },
-            'question_id': active_question,
+            'question_id': message_question_id,
             'evaluation': dict(evaluation) if evaluation else None,
             'trigger': dict(trigger) if trigger else None,
             'diagnosis': diagnosis,

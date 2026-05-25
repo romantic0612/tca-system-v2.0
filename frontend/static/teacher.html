@@ -37,15 +37,16 @@
     font-family: var(--font-sans);
     display: flex;
     justify-content: center;
-    padding: 20px;
+    padding: 16px;
     min-height: 100vh;
   }
   .card {
     background: var(--color-background-primary);
     border-radius: var(--border-radius-lg);
     border: 0.5px solid var(--color-border-tertiary);
-    max-width: 960px;
+    max-width: 1280px;
     width: 100%;
+    min-height: calc(100vh - 32px);
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     display: flex;
@@ -86,7 +87,7 @@
 
   .main-layout {
     display: flex;
-    min-height: 480px;
+    min-height: 640px;
     flex: 1;
   }
 
@@ -1056,6 +1057,9 @@ function selectStudent(userId, silent) {
 function navigateQuestion(delta) {
   currentDetailQ = Math.max(1, Math.min(totalQuestions, currentDetailQ + delta));
   updateDetailUI();
+  if (selectedStudentId) {
+    loadStudentHistory(selectedStudentId, currentDetailQ);
+  }
 }
 
 function updateDetailUI() {
@@ -1069,12 +1073,19 @@ function loadStudentHistory(userId, questionId) {
   var body = document.getElementById('chatHistoryBody');
   if (!body) return;
   body.innerHTML = '<div class="chat-line system">正在加载对话历史...</div>';
-  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(questionId), { credentials: 'include' })
+  var params = new URLSearchParams();
+  params.set('student_id', userId);
+  if (questionId) params.set('question_id', questionId);
+  fetch(API_BASE + '/api/teacher/event-detail?' + params.toString(), { credentials: 'include' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (!data.success || !data.messages || data.messages.length === 0) {
-        body.innerHTML = '<div class="chat-line system">该题暂无对话历史。</div>';
+        body.innerHTML = '<div class="chat-line system">该学生暂无可显示对话历史。</div>';
         return;
+      }
+      if (data.question_id) {
+        currentDetailQ = data.question_id;
+        updateDetailUI();
       }
       body.innerHTML = data.messages.map(function(m) {
         var who = m.type === 'user' ? '学生' : (m.agent || 'AI');

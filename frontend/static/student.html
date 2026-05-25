@@ -36,15 +36,15 @@
     font-family: var(--font-sans);
     display: flex;
     justify-content: center;
-    padding: 20px;
+    padding: 18px;
     min-height: 100vh;
   }
   .page-wrapper {
-    max-width: 720px;
+    max-width: 1180px;
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     position: relative;
   }
   .card {
@@ -53,6 +53,9 @@
     border: 0.5px solid var(--color-border-tertiary);
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    min-height: calc(100vh - 36px);
+    display: flex;
+    flex-direction: column;
   }
   /* 顶栏 */
   .topbar {
@@ -92,9 +95,10 @@
   .question-area {
     padding: 14px 16px;
     border-bottom: 0.5px solid var(--color-border-tertiary);
-    min-height: 140px;
+    min-height: 148px;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
   }
   .question-header {
     display: flex;
@@ -178,8 +182,8 @@
   /* 对话区域 */
   .chat-area {
     padding: 12px 16px;
-    min-height: 280px;
-    max-height: 420px;
+    min-height: 360px;
+    flex: 1;
     overflow-y: auto;
     border-bottom: 0.5px solid var(--color-border-tertiary);
   }
@@ -458,6 +462,7 @@
     font-size: 11px;
     color: var(--color-text-tertiary);
     text-align: center;
+    flex-shrink: 0;
   }
 
   /* 四组差异表格 */
@@ -589,6 +594,7 @@ var renderedMessageKeys = {};
 var historyTimer = null;
 var chatSending = false;
 var pendingUserMessages = [];
+var activeHistoryRequest = 0;
 var questions = {
   1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
   2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
@@ -792,7 +798,7 @@ function updateQuestionUI() {
   document.getElementById('qText').textContent = questions[currentQuestion] || '📝 请完成当前题目。';
   renderedMessageKeys = {};
   document.getElementById('chatArea').innerHTML = '';
-  loadChatHistory();
+  loadChatHistory(currentQuestion, true);
 }
 
 // ====== 聊天功能 ======
@@ -890,11 +896,19 @@ function formatMessageTime(timeValue) {
 }
 
 function loadChatHistory() {
+  var questionForRequest = arguments.length > 0 ? arguments[0] : currentQuestion;
+  var showInitialWhenEmpty = arguments.length > 1 ? arguments[1] : false;
+  var requestId = ++activeHistoryRequest;
   if (!userId) return;
-  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(currentQuestion), { credentials: 'include' })
+  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(questionForRequest), { credentials: 'include' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (requestId !== activeHistoryRequest || questionForRequest !== currentQuestion) return;
       if (!data.success) return;
+      if ((!data.messages || data.messages.length === 0) && showInitialWhenEmpty) {
+        renderInitialGuide();
+        return;
+      }
       (data.messages || []).forEach(function(msg) {
         var key = [msg.agent, msg.type, msg.time, msg.content].join('|');
         if (renderedMessageKeys[key]) return;
