@@ -7,6 +7,7 @@ calls only when ECNU_LLM_API_KEY is available.
 """
 
 import json
+import re
 import urllib.error
 import urllib.request
 
@@ -23,6 +24,7 @@ GUIDE_PROMPT = """
 3. 用提问引导学生观察已知条件、目标和下一步。
 4. 语气温和鼓励，学生挫败时先共情再继续。
 5. 每次回复尽量以开放式问题结尾。
+6. 不使用 LaTeX、Markdown 数学公式或反斜杠转义；角和度数直接写成 ∠A=50°。
 """.strip()
 
 
@@ -34,6 +36,7 @@ TUTOR_PROMPT = """
 2. 点明可能卡住的原因，但不要直接替学生完成所有作答。
 3. 分步讲解，每步后询问理解情况。
 4. 讲解结束后追加一个元认知问题：现在你能回顾一下刚才哪里卡住了吗？
+5. 不使用 LaTeX、Markdown 数学公式或反斜杠转义；角和度数直接写成 ∠A=50°。
 """.strip()
 
 
@@ -118,6 +121,22 @@ def _question_context(question_id):
     }
 
 
+def clean_math_text(text):
+    """Convert common LaTeX fragments from model output into readable text."""
+    if not text:
+        return text
+    cleaned = str(text)
+    cleaned = cleaned.replace("\\(", "").replace("\\)", "")
+    cleaned = cleaned.replace("\\[", "").replace("\\]", "")
+    cleaned = cleaned.replace("$", "")
+    cleaned = cleaned.replace("\\angle", "∠")
+    cleaned = cleaned.replace("\\circ", "°")
+    cleaned = cleaned.replace("\\,", " ")
+    cleaned = cleaned.replace("^°", "°").replace("^{°}", "°")
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
+
+
 def _agent_system_prompt(agent, experiment_group):
     prompt = TUTOR_PROMPT if agent == "Tutor" else GUIDE_PROMPT
     if experiment_group == "EXP":
@@ -152,13 +171,13 @@ def generate_agent_reply(agent, experiment_group, question_id, user_message, his
     messages.append({"role": "user", "content": user_message})
     model = config.ECNU_LLM_TUTOR_MODEL if agent == "Tutor" else config.ECNU_LLM_GUIDE_MODEL
     temperature = 0.30 if agent == "Tutor" else 0.40
-    return client.chat(
+    return clean_math_text(client.chat(
         _agent_system_prompt(agent, experiment_group),
         messages,
         model=model,
         temperature=temperature,
         max_tokens=2048,
-    )
+    ))
 
 
 def evaluate_answer_with_llm(answer, question_id):

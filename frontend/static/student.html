@@ -853,8 +853,7 @@ function addChatMessage(type, content, timeValue, key) {
   var chatArea = document.getElementById('chatArea');
   var div = document.createElement('div');
   div.className = 'chat-message' + (type === 'user' ? ' msg-user' : '');
-  var now = timeValue ? new Date(timeValue) : new Date();
-  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  var timeStr = formatMessageTime(timeValue);
   if (type === 'guide') {
     div.innerHTML = '<div class="msg-agent-label"><span class="msg-agent-name" style="color: var(--color-c-blue-600);">' + escapeHtml(currentAgent) + '</span><span class="msg-mode-tag" style="color: var(--color-c-purple-400);">(当前模式)</span></div><div class="msg-bubble"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
   } else if (type === 'system') {
@@ -872,11 +871,22 @@ function addTeacherMessage(content, teacherId, timeValue, key) {
   var chatArea = document.getElementById('chatArea');
   var div = document.createElement('div');
   div.className = 'teacher-note-wrapper';
-  var now = timeValue ? new Date(timeValue) : new Date();
-  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  var timeStr = formatMessageTime(timeValue);
   div.innerHTML = '<div class="chat-message"><div class="msg-agent-label"><span class="msg-agent-name">教师通知</span></div><div class="teacher-bubble"><span class="teacher-label">教师通知</span><p>' + escapeHtml(content) + '</p><div class="teacher-info">' + timeStr + ' · ' + escapeHtml(teacherId || 'teacher') + '</div></div></div>';
   chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function formatMessageTime(timeValue) {
+  var value = timeValue;
+  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
+    value += 'Z';
+  }
+  var now = value ? new Date(value) : new Date();
+  if (Number.isNaN(now.getTime())) {
+    now = new Date();
+  }
+  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 }
 
 function loadChatHistory() {
