@@ -1,0 +1,429 @@
+# TCA-System V2.0 项目说明
+
+## 项目简介
+
+TCA-System 是一个面向 K-12 学习场景的“教师可控多智能体 AI 辅导系统”原型。系统用学生端、教师端、管理端三类页面串起一个教学实验流程：
+
+- 学生端负责答题、与 Agent 对话、接收提示或教师干预。
+- 教师端负责查看学生求助、系统触发事件、学生历史对话，并决定是否干预或切换 Agent。
+- 管理端负责查看数据库中的学生、教师/管理员、分组统计和系统日志，并提供创建账号、导出分组数据等管理入口。
+
+当前版本的“智能功能”包含两层：第一层是规则驱动的评估和触发链路，系统会评估答案、累计错误状态、识别求助关键词，并根据 SA、EXP、AI-AUTO、TCA 四组规则决定是否提示学生、自动切换 Agent 或通知教师；第二层是 ECNU LLM API 适配层，配置 `ECNU_LLM_API_KEY` 后，Guide/Tutor/Evaluator 可以调用真实模型。未配置 Key 或接口失败时，系统自动回退到规则模板。
+
+## 本轮主要修改
+
+### 1. 智能规则主线
+
+新增或整理了后端智能规则层，核心文件是 `backend/core/intelligence.py`。
+
+已实现：
+
+- `RuleEvaluator`：对学生答案做规则评估，返回是否正确、错误类型、分数、建议和标准答案。
+- `error_streak`：根据错误类型、实验组权重、连续同类错误累计学习困难程度。
+- L1/L2/L3 触发：
+  - L1：错误累计达到阈值。
+  - L2：聊天中出现“不会、不懂、不知道、卡住”等求助关键词。
+  - L3：停滞时间达到阈值。
+- 分组策略：
+  - SA：固定 Guide，只记录评估，不主动解释，不自动切换。
+  - EXP：固定 Guide，但可给系统解释提示。
+  - AI-AUTO：触发后自动切换到 Tutor。
+  - TCA：触发后通知教师端，由教师决定是否干预。
+- 触发事件会写入 `trigger_events`，Agent 自动切换会写入 `agent_switches`。
+
+### 2. ECNU LLM API 接入
+
+新增 `backend/core/llm_client.py`，按 ECNU 智能体接口文档接入 OpenAI-compatible API。
+
+已实现：
+
+- 从环境变量读取配置，不在代码中保存明文 API Key。
+- `ECNU_LLM_API_KEY` 配置后启用真实模型调用。
+- Guide/Tutor 使用 `ecnu-plus`。
+- Evaluator 使用 `ecnu-max`。
+- 调用失败、超时、未配置 Key 时自动回退到现有规则模板。
+- 学生聊天接口返回 `response_source`，可区分 `llm` 或 `template`。
+- 学生提交答案接口返回 `evaluation_source`，可区分 `llm` 或 `rule`。
+
+需要的环境变量：
+
+```bash
+ECNU_LLM_API_KEY=你的ECNU接口Key
+ECNU_LLM_ENABLED=true
+ECNU_LLM_BASE_URL=https://chat.ecnu.edu.cn/open/api/v1
+```
+
+后续 Docker 部署约定：
+
+- 使用 `.env` 文件向容器注入 `ECNU_LLM_API_KEY`、`ECNU_LLM_ENABLED`、`ECNU_LLM_BASE_URL`、`SECRET_KEY`、`DATABASE_PATH`、`HOST`、`PORT` 等配置。
+- `.env` 属于本地/服务器私密配置文件，不提交到 Git，不写进代码。
+- 代码只读取环境变量，因此本地、测试服务器、正式服务器可以使用同一份代码，但配置不同的 `.env`。
+- 推荐准备一个 `.env.example` 作为模板，只写变量名和占位说明，不写真实 Key。
+
+示例 `.env`：
+
+```env
+ECNU_LLM_API_KEY=replace-with-real-key
+ECNU_LLM_ENABLED=true
+ECNU_LLM_BASE_URL=https://chat.ecnu.edu.cn/open/api/v1
+SECRET_KEY=replace-with-random-secret
+DATABASE_PATH=/app/data/tca_system.db
+HOST=0.0.0.0
+PORT=5000
+DEBUG=false
+```
+
+### 3. 学生端
+
+涉及页面：`frontend/static/student.html`
+
+已实现：
+
+- 学生进度、当前题目、当前 Agent、聊天记录从后端接口加载。
+- 提交答案会进入 Evaluator 评估链路。
+- 学生聊天会识别求助关键词，例如“我不会”“还是不会”等。
+- 回车可以发送聊天消息。
+- TCA 组或触发条件满足时，相关事件可推送到教师端待处理列表。
+
+### 4. 教师端
+
+涉及页面：`frontend/static/teacher.html`
+
+已实现：
+
+- 教师端从后端读取待处理请求和学生列表。
+- 学生触发 L1/L2/L3 后会写入数据库中的待处理请求，教师即使晚进入页面也能看到。
+- “详情”按钮已接入后端事件详情接口。
+- 事件详情已从原始 JSON 改为更适合教师阅读的结构化信息：
+  - 事件类型
+  - 触发层级
+  - 触发强度
+  - 错误类型
+  - 错误累计
+  - L1/L2/L3 诊断
+  - 建议处理
+- 教师可以选择保持现状或干预。
+- 教师可以忽略单条请求或全部已读，状态会写回数据库，刷新后不会重复出现。
+- 教师干预可以实时推送给学生端，并写入 `teacher_overrides` 与 `chat_messages`。
+- 学生端会轮询聊天历史，离线或错过 WebSocket 时也能补看到教师干预。
+- 教师切换 Agent 会写入 `agent_switches`。
+
+### 5. 管理端
+
+涉及页面和接口：
+
+- `frontend/static/admin.html`
+- `backend/api/admin.py`
+- `backend/app.py`
+- `backend/core/database/schema.py`
+- `init_db.py`
+- `frontend/static/login.html`
+- `start.py`
+
+已实现：
+
+- 新增管理端 API：
+  - `GET /api/admin/dashboard`
+  - `POST /api/admin/students`
+  - `POST /api/admin/teachers`
+  - `GET /api/admin/export/assignments.csv`
+- 管理端学生表、用户表、日志表和分组统计全部从数据库接口读取。
+- 管理端不再使用前端硬编码的默认学生数组。
+- 管理端支持 CSV 批量导入学生，字段包括学号、姓名、班级、前测成绩、组别。
+- 管理端支持批量随机分组写入数据库：
+  - 简单随机分配
+  - 按班级块随机分配
+  - 按前测成绩分层随机分配
+- 管理端支持学生编辑和删除。
+- 登录页去掉默认学生/教师快捷入口，只保留管理员入口。
+- 应用启动时不再自动种 4 个学生样例，只保留默认管理员账号：
+  - `900001 / admin123`
+- CSV 导出从数据库读取 `student_assignments`。
+- 管理端顶部账号和角色从登录 session 中读取，不再写死 `admin`。
+
+注意：当前本机 SQLite 数据库里如果还能看到张明、李华、王芳、赵强，是因为旧数据库已经存在这些历史种子数据，不是前端硬编码。新建空库时系统不会再自动生成这些学生。
+
+### 6. 待办记录
+
+新增 `TODO.md`，记录目前还没有完成或需要部署联调的关键事项：
+
+- ECNU LLM API 适配层已接入，但需要配置 `ECNU_LLM_API_KEY` 后才能真实调用。
+- Docker 部署资料已补齐，包含 `Dockerfile`、`docker-compose.yml`、`.env.example`、`.dockerignore` 和 `DEPLOYMENT.md`；后续需要在云服务器填写 `.env` 并完成联调。
+
+## 当前可以实现的功能
+
+### 1. 登录与角色跳转
+
+可以实现：
+
+- 管理员登录后进入管理端。
+- 学生、教师账号如果存在于数据库中，也可以正常登录并跳转到对应页面。
+
+如何体现：
+
+1. 打开 `http://127.0.0.1:5000/login.html`。
+2. 使用管理员账号 `900001 / admin123` 登录。
+3. 页面跳转到 `admin.html`，顶部显示当前管理员账号和角色。
+
+后端验证：
+
+```bash
+python test_flask.py
+```
+
+测试中会验证认证接口、基础路由和数据库连接。
+
+### 2. 学生答题评估
+
+可以实现：
+
+- 学生提交答案后，后端会判断答案是否正确。
+- 配置 `ECNU_LLM_API_KEY` 后，优先由 ECNU Evaluator 模型评估。
+- 未配置 Key 或接口失败时，回退到本地规则 Evaluator。
+- 错误答案会被标记为 `concept`、`calculation`、`format` 等错误类型。
+- 系统会给出分数、错误提示和建议。
+- 评估记录写入 `evaluation_records`。
+
+如何体现：
+
+1. 使用数据库中的学生账号登录学生端。
+2. 在题目答案框中输入错误答案并提交。
+3. 学生端会显示评分、错误类型、错误累计等信息。
+4. 接口返回中查看 `evaluation_source`：`llm` 表示模型评估，`rule` 表示规则兜底。
+5. 数据库表 `evaluation_records` 会新增记录。
+
+### 3. error_streak 错误累计
+
+可以实现：
+
+- 学生连续答错时，`student_states.error_streak` 会增长。
+- 不同错误类型有不同权重。
+- 不同实验组有不同累计倍率，TCA 更敏感，SA 更保守。
+- 答对后错误累计会下降。
+
+如何体现：
+
+1. 学生连续提交错误答案。
+2. 学生端提示中可看到错误累计变化。
+3. 教师端事件详情中也会显示错误累计。
+4. 数据库 `student_states.error_streak` 会更新。
+
+### 4. L1/L2/L3 触发规则
+
+可以实现：
+
+- L1：答题错误累计达到阈值时触发。
+- L2：学生聊天出现求助关键词时触发。
+- L3：停滞时间达到阈值时触发。
+- 触发结果写入 `trigger_events`。
+
+如何体现：
+
+1. 学生端输入“我不会”“不懂”“还是不会”等消息。
+2. 或连续提交错误答案。
+3. 教师端待处理请求列表会出现相应事件。
+4. 点击教师端“详情”，可以看到 L1/L2/L3 的诊断内容。
+
+### 5. AI-AUTO 自动切换
+
+可以实现：
+
+- AI-AUTO 组学生触发规则后，系统自动将当前 Agent 切换到 Tutor。
+- 切换记录写入 `agent_switches`。
+
+如何体现：
+
+1. 使用 AI-AUTO 组学生登录。
+2. 通过错误答案或“我不会”等消息触发规则。
+3. 学生端当前 Agent 变为 Tutor。
+4. 管理端日志或数据库 `agent_switches` 中可看到切换记录。
+
+### 6. TCA 教师干预
+
+可以实现：
+
+- TCA 组学生触发规则后，不自动替学生决定下一步，而是提醒教师。
+- 教师端待处理请求显示学生动态。
+- 教师可以查看详情、忽略、保持现状或发送干预内容。
+- 干预内容会实时发送给学生端，并写入 `teacher_overrides` 和 `chat_messages`。
+- 学生端如果当时不在线，重新进入题目后也会从历史记录补拉教师干预消息。
+
+如何体现：
+
+1. 使用 TCA 组学生登录学生端。
+2. 输入“我不会”或连续答错。
+3. 打开教师端，待处理请求中会出现该学生事件。
+4. 点击“详情”，查看结构化诊断。
+5. 在教师干预区输入提示并发送。
+6. 在线学生端聊天区会立即收到教师干预消息。
+7. 刷新或重新进入学生端，仍能在聊天历史中看到教师干预消息。
+
+### 7. 教师端事件详情
+
+可以实现：
+
+- 教师端点击待处理请求的“详情”后，会加载后端事件详情。
+- 待处理请求不是只靠 WebSocket 临时显示，而是持久化到数据库。
+- 老师什么时候打开教师端，都可以重新加载尚未处理的学生问题。
+- 不再只显示原始 JSON，而是显示教师可读的诊断信息。
+
+如何体现：
+
+1. 教师端出现待处理请求。
+2. 点击“详情”。
+3. 右侧对话历史和事件详情区域显示触发原因、错误累计、建议处理等信息。
+4. 点击“忽略”或“全部已读”后，待处理状态会写回数据库。
+
+### 8. 管理端数据库仪表盘
+
+可以实现：
+
+- 管理端从数据库读取学生、用户、日志。
+- 分组统计从 `student_assignments` 实时计算。
+- 可以创建单个学生账号。
+- 可以 CSV 批量导入学生账号，已存在学生会更新，不存在学生会新增。
+- 可以编辑学生姓名、班级、前测成绩、实验组。
+- 可以删除学生及其关联答题、聊天、触发、干预记录。
+- 可以将批量随机分组结果写入数据库。
+- 可以创建教师或管理员账号。
+- 可以导出学生分组 CSV。
+
+如何体现：
+
+1. 登录管理员账号 `900001 / admin123`。
+2. 打开 `admin.html`。
+3. 查看学生表，表格行显示“来自数据库”。
+4. 新建学生后，页面刷新并从数据库重新加载。
+5. 上传 CSV 文件导入学生，确认新增/更新数量。
+6. 点击“执行分组”，刷新后确认组别已写入数据库。
+7. 编辑或删除学生，刷新后确认结果仍从数据库读取。
+8. 点击“导出分组结果 (CSV)”，下载数据库中的分组数据。
+
+### 9. WebSocket 实时链路
+
+可以实现：
+
+- 学生端、教师端之间的部分通知和干预通过 WebSocket 同步。
+- 教师干预发送后，学生端可以收到消息。
+
+如何体现：
+
+```bash
+python test_websocket.py
+```
+
+或同时打开学生端和教师端，触发求助/干预流程，看两端消息同步。
+
+### 10. ECNU LLM 调用链路
+
+可以实现：
+
+- Guide/Tutor 聊天回复调用 ECNU LLM。
+- Evaluator 答案评估调用 ECNU LLM。
+- 接口失败时自动回退，不影响系统演示。
+
+如何体现：
+
+1. 在启动服务前设置环境变量 `ECNU_LLM_API_KEY`。
+2. 启动 `python start.py`。
+3. 学生端发送聊天消息。
+4. 查看 `/api/student/chat` 响应中的 `response_source`：
+   - `llm`：真实模型回复。
+   - `template`：模板兜底。
+5. 学生提交答案。
+6. 查看 `/api/student/submit-answer` 响应中的 `evaluation_source`：
+   - `llm`：真实模型评估。
+   - `rule`：规则兜底。
+
+## 当前不能误说已经完成的部分
+
+### 1. 真实大模型需要配置 Key 后才会调用
+
+当前已经有 ECNU LLM API 适配层，但代码库不保存明文 API Key。没有配置 `ECNU_LLM_API_KEY` 时，Guide/Tutor/Evaluator 仍会走规则模板兜底。因此如果页面仍显示 `response_source=template` 或 `evaluation_source=rule`，说明尚未完成本机/服务器环境变量配置或接口调用失败。
+
+后续联调重点：
+
+- 在部署环境设置 `ECNU_LLM_API_KEY`。
+- 用真实学生聊天验证 `response_source=llm`。
+- 用真实答题验证 `evaluation_source=llm`。
+- 根据队长要求继续细化 Prompt。
+
+### 2. Excel 直接导入暂未支持
+
+当前管理端已支持 CSV 批量导入。Excel 文件需要先另存为 CSV 后再导入，后续如需要可再加入 Excel 解析依赖。
+
+### 3. Docker 部署需要服务器联调
+
+Docker 部署文件已经补齐：`Dockerfile`、`docker-compose.yml`、`.env.example`、`.dockerignore` 和 `DEPLOYMENT.md`。当前还不能说已经完成线上部署，因为需要在服务器 `150.158.3.192` 上配置真实 `.env`、构建容器、开放 `8501` 端口并验证学生端、教师端、管理端和 ECNU LLM 调用。
+
+## 推荐验收流程
+
+1. 启动服务：
+
+```bash
+python start.py
+```
+
+2. 跑后端基础测试：
+
+```bash
+python test_flask.py
+```
+
+3. 跑 WebSocket 测试：
+
+```bash
+python test_websocket.py
+```
+
+4. 管理端验收：
+
+- 登录 `900001 / admin123`。
+- 确认学生、用户、日志从数据库加载。
+- 新建一个学生账号。
+- 用 CSV 批量导入学生。
+- 执行简单随机/块随机/分层随机分组，确认组别写入数据库。
+- 编辑一个学生，确认刷新后仍保留。
+- 删除一个测试学生，确认关联数据清理。
+- 导出 CSV。
+
+5. 学生端验收：
+
+- 用数据库中已有学生账号登录。
+- 提交错误答案。
+- 输入“我不会”。
+- 确认出现评估、错误累计和触发行为。
+
+6. 教师端验收：
+
+- 用数据库中已有教师账号登录。
+- 查看待处理请求。
+- 点击“详情”。
+- 发送干预。
+- 回到学生端确认收到教师消息。
+
+7. AI-AUTO/TCA 对照验收：
+
+- AI-AUTO 组：触发后应自动切换 Tutor。
+- TCA 组：触发后应提醒教师，由教师决定是否干预。
+- SA 组：应保持 Guide，不主动解释、不自动切换。
+- EXP 组：应保持 Guide，但可以显示解释提示。
+
+8. ECNU LLM 验收：
+
+- 设置 `ECNU_LLM_API_KEY`。
+- 学生端发起聊天，确认接口返回 `response_source=llm`。
+- 学生提交答案，确认接口返回 `evaluation_source=llm`。
+- 临时移除 Key 再试一次，确认系统能回退到 `template`/`rule`。
+
+9. Docker 部署验收：
+
+- 准备服务器 `.env`，写入 ECNU API Key 和 Flask 配置。
+- 容器启动时加载 `.env`。
+- 进入学生端聊天，确认 `response_source=llm`。
+- 提交答案，确认 `evaluation_source=llm`。
+- 确认 `.env` 没有被提交到代码仓库。
+
+## 一句话状态总结
+
+当前系统已经从“页面骨架”推进到“数据库驱动 + 管理端批量数据维护 + 规则智能评估 + ECNU LLM 可配置接入 + 教师可控干预 + Docker 部署资料齐备”的可演示原型；剩余重点主要是云服务器联调、端口/环境变量配置，以及按队长反馈继续细化 Prompt 和实验数据字段。

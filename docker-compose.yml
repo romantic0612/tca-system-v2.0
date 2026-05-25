@@ -1,0 +1,11 @@
+services:
+  tca-system:
+    build: .
+    container_name: tca-system
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${HOST_PORT:-8501}:5000"
+    volumes:
+      - ./data:/app/data

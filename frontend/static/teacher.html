@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA-System 教师端监控面板</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8f9fa;
+    --color-border-tertiary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-c-blue-600: #2563eb;
+    --color-c-blue-800: #1e40af;
+    --color-c-blue-50: #eff6ff;
+    --color-c-blue-200: #bfdbfe;
+    --color-c-amber-50: #fffbeb;
+    --color-c-amber-200: #fde68a;
+    --color-c-amber-600: #d97706;
+    --color-c-amber-800: #92400e;
+    --color-c-coral-600: #e11d48;
+    --color-c-red-50: #fef2f2;
+    --color-c-red-600: #dc2626;
+    --color-c-purple-600: #7c3aed;
+    --color-c-teal-600: #0d9488;
+    --color-c-green-600: #059669;
+    --color-c-gray-500: #6b7280;
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f0f2f5;
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    max-width: 960px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-username {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .topbar-role {
+    font-size: 12px;
+    color: var(--color-c-teal-600);
+  }
+  .topbar-logout {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+  }
+  .topbar-logout:hover {
+    color: var(--color-c-coral-600);
+  }
+
+  .main-layout {
+    display: flex;
+    min-height: 480px;
+    flex: 1;
+  }
+
+  /* 左侧面板 (40%) */
+  .left-panel {
+    width: 40%;
+    border-right: 0.5px solid var(--color-border-tertiary);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 可折叠区域通用 */
+  .collapsible-header {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .collapsible-header:hover {
+    background: var(--color-background-secondary);
+  }
+  .collapsible-title {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .pending-section {
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    position: relative;
+  }
+  .pending-body {
+    max-height: 220px;
+    overflow-y: auto;
+    transition: max-height 0.2s ease;
+  }
+  /* 待处理请求滚动条底部渐变提示 */
+  .pending-body::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.06));
+    pointer-events: none;
+    display: block;
+    z-index: 1;
+  }
+  /* 自定义滚动条样式 */
+  .pending-body::-webkit-scrollbar,
+  .student-list-body::-webkit-scrollbar {
+    width: 4px;
+  }
+  .pending-body::-webkit-scrollbar-track,
+  .student-list-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .pending-body::-webkit-scrollbar-thumb,
+  .student-list-body::-webkit-scrollbar-thumb {
+    background: var(--color-border-secondary);
+    border-radius: 2px;
+  }
+  .pending-body::-webkit-scrollbar-thumb:hover,
+  .student-list-body::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-tertiary);
+  }
+  .pending-item {
+    padding: 8px 12px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .pending-item.urgent {
+    background: var(--color-c-red-50);
+  }
+  .pending-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .pending-item-left {
+    flex: 1;
+    min-width: 0;
+  }
+  .pending-tags {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .tag-urgent {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-c-red-600);
+  }
+  .tag-detect {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+  .tag-student {
+    font-size: 11px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .tag-question {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+  }
+  .pending-desc {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+  }
+  .pending-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+  .btn-sm {
+    font-size: 10px;
+    padding: 2px 8px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-family: var(--font-sans);
+  }
+  .btn-sm:hover {
+    background: var(--color-background-secondary);
+  }
+  .mark-all-read {
+    font-size: 11px;
+    color: var(--color-c-blue-600);
+    cursor: pointer;
+  }
+  .mark-all-read:hover {
+    text-decoration: underline;
+  }
+  .hidden-more {
+    padding: 4px 12px;
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    cursor: pointer;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .hidden-more:hover {
+    background: var(--color-background-secondary);
+  }
+
+  /* 学生列表 */
+  .student-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .student-list-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+  .student-item {
+    padding: 10px 12px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .student-item-left {
+    flex: 1;
+    min-width: 0;
+  }
+  .student-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .agent-icon { font-size: 13px; }
+  .student-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .question-badge {
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    color: white;
+    line-height: 1.5;
+  }
+  .badge-tca { background: #7C3AED; }
+  .badge-sa { background: #6B7280; }
+  .badge-aiauto { background: #059669; }
+  .badge-exp { background: #2563EB; }
+  .student-preview {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+  }
+  .btn-detail {
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 6px;
+    font-family: var(--font-sans);
+  }
+  .btn-detail:hover {
+    background: var(--color-background-secondary);
+  }
+
+  /* 右侧面板 (60%) */
+  .right-panel {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .student-info-bar {
+    padding: 8px 14px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .info-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .info-mode {
+    font-size: 12px;
+    color: var(--color-c-purple-600);
+  }
+  .info-help {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-left: auto;
+  }
+
+  .question-nav-bar {
+    padding: 8px 14px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .question-nav-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-arrow {
+    font-size: 14px;
+    padding: 2px 10px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    line-height: 1.4;
+    font-family: var(--font-sans);
+  }
+  .nav-arrow:hover {
+    background: var(--color-background-secondary);
+  }
+  .question-center {
+    flex: 1;
+    text-align: center;
+  }
+  .question-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .question-score {
+    font-size: 11px;
+    color: var(--color-c-amber-600);
+    margin-left: 8px;
+  }
+  .question-status {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-left: 4px;
+  }
+  .question-meta {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .chat-history {
+    flex: 1;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-history-body {
+    padding: 8px 14px;
+    max-height: 160px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .chat-line {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.9;
+  }
+  .chat-line.system {
+    color: var(--color-c-amber-600);
+  }
+  .diagnosis-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-left: 3px solid var(--color-c-amber-600);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #fffaf0;
+  }
+  .diagnosis-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 6px;
+  }
+  .diagnosis-row {
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.7;
+  }
+  .diagnosis-row strong {
+    color: #111827;
+    font-weight: 500;
+  }
+  .diagnosis-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .diagnosis-tag {
+    font-size: 11px;
+    padding: 2px 7px;
+    border: 0.5px solid #fde68a;
+    border-radius: 999px;
+    background: #fffbeb;
+    color: #92400e;
+  }
+  .raw-diagnosis {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .raw-diagnosis summary {
+    cursor: pointer;
+  }
+  .raw-diagnosis pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-top: 6px;
+    padding: 8px;
+    background: white;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 6px;
+  }
+
+  .intervention-section {
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .intervention-body {
+    padding: 8px 14px;
+  }
+  .intervention-buttons {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .btn-intervene {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 11px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: all 0.1s;
+  }
+  .btn-intervene:hover {
+    border-color: var(--color-c-blue-400);
+  }
+  .btn-intervene.keep {
+    background: white;
+  }
+  .btn-intervene.intervene {
+    background: var(--color-c-amber-50);
+    border-color: var(--color-c-amber-200);
+  }
+  .intervention-form {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .select-group {
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .select-group label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .select-group select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    outline: none;
+    background: white;
+  }
+  .text-group {
+    flex: 1;
+  }
+  .text-group label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .intervention-textarea {
+    width: 100%;
+    height: 64px;
+    padding: 8px 10px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    font-family: var(--font-sans);
+    transition: border-color 0.2s;
+  }
+  .intervention-textarea:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  }
+  .send-btn-group {
+    width: 60px;
+    flex-shrink: 0;
+    padding-top: 18px;
+  }
+  .btn-send-intervene {
+    width: 100%;
+    padding: 6px 0;
+    background: var(--color-c-blue-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+  }
+  .btn-send-intervene:hover {
+    background: #1d4ed8;
+  }
+
+  .log-section {
+    flex-shrink: 0;
+  }
+  .log-body {
+    padding: 8px 14px;
+    max-height: 80px;
+    overflow-y: auto;
+  }
+  .log-entry {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+  }
+
+  .footer {
+    padding: 8px 16px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+  }
+
+  /* 收起状态 */
+  .collapsed .pending-body,
+  .collapsed .student-list-body,
+  .collapsed .chat-history-body,
+  .collapsed .intervention-body,
+  .collapsed .log-body {
+    display: none;
+  }
+</style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/websocket.js"></script>
+</head>
+<body>
+<div class="card">
+  <!-- 顶栏 -->
+<div class="topbar">
+      <div class="topbar-title">TCA-System</div>
+      <div class="topbar-right">
+        <span class="topbar-username" id="teacherName">加载中...</span>
+        <span class="topbar-role">监控面板</span>
+        <span class="topbar-logout" onclick="doLogout()">退出</span>
+      </div>
+    </div>
+
+  <div class="main-layout">
+    <!-- 左侧40% -->
+    <div class="left-panel">
+      <!-- 待处理请求（可折叠） -->
+      <div class="pending-section" id="pendingSection">
+        <div class="collapsible-header" onclick="toggleCollapse('pendingSection')">
+          <span class="collapsible-title" id="pendingTitle">▾ 待处理请求 (0)</span>
+          <span class="mark-all-read" onclick="event.stopPropagation();markAllRead();">全部已读</span>
+        </div>
+        <div class="pending-body" id="pendingBody">
+          <div class="empty-state" id="pendingEmpty" style="padding:16px 12px;color:var(--color-text-tertiary);font-size:12px;text-align:center;">暂无待处理请求</div>
+        </div>
+      </div>
+
+      <!-- 学生列表（可折叠） -->
+      <div class="student-section" id="studentSection">
+        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('studentSection')">
+          <span class="collapsible-title">▾ 学生列表</span>
+          <span style="font-size: 11px; color: var(--color-text-tertiary);" id="studentListSummary">加载中...</span>
+        </div>
+        <div class="student-list-body" id="studentListBody">
+          <!-- 由JS动态渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧60% -->
+    <div class="right-panel" id="rightPanel">
+      <!-- 学生信息 -->
+      <div class="student-info-bar">
+        <span class="info-name" id="detailName">请选择学生</span>
+        <span class="info-mode" id="detailMode">—</span>
+        <span class="info-help" id="detailHelpRemain">—</span>
+      </div>
+
+      <!-- 题目切换 -->
+      <div class="question-nav-bar">
+        <div class="question-nav-row">
+          <button class="nav-arrow" onclick="navigateQuestion(-1)">&lt;</button>
+          <div class="question-center">
+            <span class="question-label" id="detailQNumber">第 3 题 / 共 8 题</span>
+            <span class="question-score" id="detailScore">评分: —</span>
+            <span class="question-status" id="detailStatus">(待观察)</span>
+          </div>
+          <button class="nav-arrow" onclick="navigateQuestion(1)">&gt;</button>
+        </div>
+        <div class="question-meta" id="detailMeta">知识点: — | 状态: 待观察</div>
+      </div>
+
+      <!-- 对话历史（可折叠） -->
+      <div class="chat-history" id="chatHistorySection">
+        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('chatHistorySection')">
+          <span class="collapsible-title" id="chatHistoryTitle">▾ 对话历史</span>
+        </div>
+        <div class="chat-history-body" id="chatHistoryBody">
+          <div class="chat-line system">选择学生后，将显示实时学习动态。</div>
+        </div>
+      </div>
+
+      <!-- 教师干预（可折叠） -->
+      <div class="intervention-section" id="interventionSection">
+        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('interventionSection')">
+          <span class="collapsible-title">▾ 教师干预</span>
+        </div>
+        <div class="intervention-body">
+          <div class="intervention-buttons">
+            <button class="btn-intervene keep" onclick="keepCurrent()">🟢 保持现状</button>
+            <button class="btn-intervene intervene" onclick="sendIntervention()">🔴 干预</button>
+          </div>
+          <div class="intervention-form">
+            <div class="select-group">
+              <label>切换至</label>
+              <select>
+                <option>Guide</option>
+                <option selected>Tutor</option>
+              </select>
+            </div>
+            <div class="text-group">
+              <label>解释/提示文本</label>
+              <textarea class="intervention-textarea" placeholder="输入要发送给学生的解释或提示...">注意已知条件中两个角的关系，想想它们加起来是多少度？</textarea>
+            </div>
+            <div class="send-btn-group">
+              <button class="btn-send-intervene" onclick="sendIntervention()">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 干预日志（可折叠） -->
+      <div class="log-section" id="logSection">
+        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('logSection')">
+          <span class="collapsible-title">▾ 干预日志</span>
+        </div>
+        <div class="log-body" id="logBody">
+          <div class="log-entry">等待实时事件...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    TCA-System · 华东师范大学 · v2.0
+  </div>
+</div>
+
+<script>
+var API_BASE = window.location.origin;
+var studentData = [];         // 所有学生数据
+var selectedStudentId = null; // 当前选中的学生ID
+var currentDetailQ = 1;
+var totalQuestions = 10;
+var wsClient = null;
+var pendingCount = 0;
+var pendingKeys = {};
+var latestTriggerEventId = null;
+
+// ====== 页面初始化 ======
+function initPage() {
+  fetch(API_BASE + '/api/auth/check', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.logged_in) { window.location.href = 'login.html'; return; }
+      var uid = data.user_info.user_id;
+      var role = data.user_info.role;
+      document.getElementById('teacherName').textContent = '教师 ' + uid;
+      initWebSocket();
+      // 加载学生列表
+      return fetch(API_BASE + '/api/student/list', { credentials: 'include' });
+    })
+    .then(function(r) { return r ? r.json() : null; })
+    .then(function(data) {
+      if (data && data.success) {
+        studentData = data.students;
+        renderStudentList();
+        updateStudentSummary();
+        if (studentData.length > 0) {
+          selectStudent(studentData[0].user_id, true);
+        }
+        loadHelpRequests();
+      }
+    })
+    .catch(function(err) {
+      console.error('初始化失败:', err);
+    });
+}
+
+function initWebSocket() {
+  if (wsClient || !window.TCAWebSocket) return;
+  wsClient = new TCAWebSocket();
+  wsClient.on('student_update', function(data) {
+    var trigger = data.data && data.data.trigger ? data.data.trigger : null;
+    var l2Triggered = trigger && trigger.diagnosis && trigger.diagnosis.L2 && trigger.diagnosis.L2.triggered;
+    var isTca = data.experiment_group === 'TCA';
+    var itemType = l2Triggered ? (isTca ? '主动求助' : '求助信号') : '学生动态';
+    var itemDesc = data.action || '状态更新';
+    if (l2Triggered) {
+      var keywords = trigger.diagnosis.L2.detected_keywords || [];
+      itemDesc = '检测到求助关键词' + (keywords.length ? '：' + keywords.join('、') : '') + (isTca ? '' : '（非TCA组，仅观察）');
+    }
+    addPendingItem({
+      type: itemType,
+      student_id: data.student_id,
+      student_name: data.student_name || data.student_id,
+      question_id: data.current_question,
+      desc: itemDesc,
+      urgent: isTca && l2Triggered,
+      trigger_event_id: data.trigger_event_id,
+      raw: data
+    });
+    addLog('学生 ' + (data.student_name || data.student_id) + ' ' + (data.action || '状态更新'));
+  });
+  wsClient.on('help_request', function(data) {
+    addPendingItem({
+      type: '主动求助',
+      student_id: data.student_id,
+      student_name: data.student_name || data.student_id,
+      question_id: data.question_id,
+      desc: data.content || '学生请求帮助',
+      urgent: true,
+      trigger_event_id: data.trigger_event_id,
+      raw: data
+    });
+    addLog('收到学生 ' + (data.student_name || data.student_id) + ' 的求助');
+  });
+  wsClient.connect();
+}
+
+function addPendingItem(item) {
+  var body = document.getElementById('pendingBody');
+  if (!body) return;
+  var key = pendingItemKey(item);
+  if (pendingKeys[key]) return;
+  pendingKeys[key] = true;
+  var empty = document.getElementById('pendingEmpty');
+  if (empty) empty.remove();
+  pendingCount++;
+  updatePendingTitle();
+  var div = document.createElement('div');
+  div.className = 'pending-item' + (item.urgent ? ' urgent' : '');
+  div.pendingItem = item;
+  div.pendingKey = key;
+  div.innerHTML = '<div class="pending-item-header"><div class="pending-item-left"><div class="pending-tags"><span class="' + (item.urgent ? 'tag-urgent' : 'tag-detect') + '">' + escapeHtml(item.type) + '</span><span class="tag-student">' + escapeHtml(item.student_name || '未知学生') + '</span><span class="tag-question">第' + escapeHtml(item.question_id || '-') + '题</span></div><div class="pending-desc">' + escapeHtml(item.desc || '') + '</div></div><div class="pending-actions"><button class="btn-sm btn-detail-event">详情</button><button class="btn-sm btn-ignore-event">忽略</button></div></div>';
+  div.querySelector('.btn-detail-event').addEventListener('click', function(e) {
+    e.stopPropagation();
+    openPendingDetail(div.pendingItem);
+  });
+  div.querySelector('.btn-ignore-event').addEventListener('click', function(e) {
+    e.stopPropagation();
+    ignorePendingItem(div);
+  });
+  div.addEventListener('click', function() {
+    openPendingDetail(div.pendingItem);
+  });
+  body.insertBefore(div, body.firstChild);
+}
+
+function updatePendingTitle() {
+  var title = document.getElementById('pendingTitle');
+  if (title) title.textContent = '▾ 待处理请求 (' + pendingCount + ')';
+}
+
+function loadHelpRequests() {
+  fetch(API_BASE + '/api/teacher/help-requests', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      data.requests.slice().reverse().forEach(function(item) {
+        addPendingItem({
+          type: '主动求助',
+          request_id: item.id,
+          student_id: item.student_id,
+          student_name: item.student_name || item.student_id,
+          question_id: item.question_id,
+          desc: item.content,
+          urgent: true,
+          trigger_event_id: item.trigger_event_id,
+          raw: item
+        });
+      });
+    })
+    .catch(function(err) { console.warn('求助列表加载失败', err); });
+}
+
+function ignorePendingItem(element) {
+  if (!element) return;
+  var item = element.pendingItem || {};
+  if (item.request_id) {
+    fetch(API_BASE + '/api/teacher/help-requests/' + encodeURIComponent(item.request_id) + '/read', {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(function() {});
+  }
+  if (element.pendingKey) delete pendingKeys[element.pendingKey];
+  element.remove();
+  pendingCount = Math.max(pendingCount - 1, 0);
+  updatePendingTitle();
+  var body = document.getElementById('pendingBody');
+  if (body && pendingCount === 0) {
+    body.innerHTML = '<div class="empty-state" id="pendingEmpty" style="padding:16px 12px;color:var(--color-text-tertiary);font-size:12px;text-align:center;">暂无待处理请求</div>';
+  }
+}
+
+function openPendingDetail(item) {
+  if (!item || !item.student_id) return;
+  latestTriggerEventId = item.trigger_event_id || null;
+  selectedStudentId = item.student_id;
+  currentDetailQ = Number(item.question_id || currentDetailQ || 1);
+  selectStudent(item.student_id, true);
+  currentDetailQ = Number(item.question_id || currentDetailQ || 1);
+  updateDetailUI();
+  loadEventDetail(item);
+}
+
+function loadEventDetail(item) {
+  var params = new URLSearchParams();
+  params.set('student_id', item.student_id);
+  if (item.question_id) params.set('question_id', item.question_id);
+  if (item.trigger_event_id) params.set('trigger_event_id', item.trigger_event_id);
+
+  fetch(API_BASE + '/api/teacher/event-detail?' + params.toString(), { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) {
+        addLog('详情加载失败：' + (data.error || '未知错误'));
+        return;
+      }
+      renderEventDetail(data, item);
+    })
+    .catch(function() {
+      addLog('详情加载失败：网络错误');
+    });
+}
+
+function renderEventDetail(data, item) {
+  var student = data.student || {};
+  selectedStudentId = student.student_id || item.student_id;
+  currentDetailQ = data.question_id || item.question_id || currentDetailQ;
+  totalQuestions = student.total_questions || totalQuestions;
+  latestTriggerEventId = item.trigger_event_id || (data.trigger && data.trigger.id) || null;
+
+  document.getElementById('detailName').textContent = student.student_name || item.student_name || selectedStudentId;
+  document.getElementById('detailMode').textContent = (student.experiment_group || '-') + '组 · ' + (student.current_agent || 'Guide');
+  document.getElementById('detailHelpRemain').textContent = student.experiment_group === 'TCA' ? '可接收教师干预' : '非TCA组';
+  document.getElementById('detailQNumber').textContent = '第 ' + currentDetailQ + ' 题 / 共 ' + totalQuestions + ' 题';
+
+  if (data.evaluation) {
+    document.getElementById('detailScore').textContent = '评分: ' + data.evaluation.score + '/100';
+    document.getElementById('detailStatus').textContent = data.evaluation.is_correct ? '(正确)' : '(需关注)';
+    document.getElementById('detailMeta').textContent = '错误类型: ' + (data.evaluation.error_type || '-') + ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1);
+  } else {
+    document.getElementById('detailScore').textContent = '评分: —';
+    document.getElementById('detailStatus').textContent = '(待观察)';
+    document.getElementById('detailMeta').textContent = '触发: ' + (data.trigger ? data.trigger.trigger_level : '-') + ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1);
+  }
+
+  renderDiagnosis(data, item);
+}
+
+function renderDiagnosis(data, item) {
+  var body = document.getElementById('chatHistoryBody');
+  if (!body) return;
+  var lines = [];
+
+  var trigger = data.trigger || {};
+  var student = data.student || {};
+  var evaluation = data.evaluation || {};
+  var diagnosis = data.diagnosis || {};
+  var l1 = diagnosis.L1 || {};
+  var l2 = diagnosis.L2 || {};
+  var l3 = diagnosis.L3 || {};
+  var tags = [];
+  if (l1.triggered) tags.push('连续错误/错误累计');
+  if (l2.triggered) tags.push('学生主动求助');
+  if (l3.triggered) tags.push('长时间停滞');
+  if (tags.length === 0 && trigger.trigger_level) tags.push('系统触发');
+
+  var severityMap = { HIGH: '高', MEDIUM: '中', LOW: '低', NONE: '无' };
+  var errorTypeMap = {
+    concept: '概念理解问题',
+    calculation: '计算问题',
+    step: '解题步骤问题',
+    format: '答案格式问题',
+    none: '暂无明显错误'
+  };
+  var suggestion = evaluation.suggestion || '建议查看学生当前题目的作答和对话，再决定是否发送提示或切换 Tutor。';
+
+  lines.push(
+    '<div class="diagnosis-card">' +
+      '<div class="diagnosis-title">需要关注：' + escapeHtml(item.desc || '系统检测到学生可能需要帮助') + '</div>' +
+      '<div class="diagnosis-row"><strong>学生：</strong>' + escapeHtml(student.student_name || item.student_name || item.student_id || '-') + '　<strong>组别：</strong>' + escapeHtml(student.experiment_group || '-') + '　<strong>当前模式：</strong>' + escapeHtml(student.current_agent || 'Guide') + '</div>' +
+      '<div class="diagnosis-row"><strong>题目：</strong>第 ' + escapeHtml(data.question_id || item.question_id || '-') + ' 题　<strong>提醒强度：</strong>' + escapeHtml(severityMap[trigger.trigger_strength] || trigger.trigger_strength || '-') + '　<strong>错误累计：</strong>' + escapeHtml(Number(student.error_streak || 0).toFixed(1)) + '</div>' +
+      '<div class="diagnosis-row"><strong>主要问题：</strong>' + escapeHtml(errorTypeMap[trigger.error_type] || trigger.error_type || '待观察') + '</div>' +
+      '<div class="diagnosis-row"><strong>系统建议：</strong>' + escapeHtml(suggestion) + '</div>' +
+      '<div class="diagnosis-tags">' + tags.map(function(tag) { return '<span class="diagnosis-tag">' + escapeHtml(tag) + '</span>'; }).join('') + '</div>' +
+      '<details class="raw-diagnosis"><summary>查看技术诊断</summary><pre>' + escapeHtml(JSON.stringify(diagnosis || {}, null, 2)) + '</pre></details>' +
+    '</div>'
+  );
+
+  if (data.messages && data.messages.length > 0) {
+    lines.push('<div class="chat-line system">最近对话</div>');
+    data.messages.forEach(function(m) {
+      var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
+      lines.push('<div class="chat-line">' + escapeHtml(who + ': ' + m.content) + '</div>');
+    });
+  } else {
+    lines.push('<div class="chat-line system">该题暂无对话历史。</div>');
+  }
+  body.innerHTML = lines.join('');
+}
+
+// ====== 渲染学生列表 ======
+function renderStudentList() {
+  var container = document.getElementById('studentListBody');
+  if (!container) return;
+  if (studentData.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--color-text-tertiary);font-size:12px;">暂无学生数据</div>';
+    return;
+  }
+  var html = '';
+  // 条件显示顺序：TCA → SA → AI-AUTO → EXP
+  var order = { 'TCA': 0, 'SA': 1, 'AI-AUTO': 2, 'EXP': 3 };
+  var sorted = studentData.slice().sort(function(a, b) {
+    return (order[a.condition] || 99) - (order[b.condition] || 99);
+  });
+  sorted.forEach(function(s) {
+    var badgeClass = 'badge-' + s.condition.toLowerCase().replace('-', '');
+    var colorMap = { 'TCA': '#7C3AED', 'SA': '#6B7280', 'AI-AUTO': '#059669', 'EXP': '#2563EB' };
+    var color = colorMap[s.condition] || '#6B7280';
+    html += '<div class="student-item" onclick="selectStudent(' + s.user_id + ')">';
+    html += '<div class="student-item-left">';
+    html += '<div class="student-item-row">';
+    html += '<span class="agent-icon" style="color: ' + color + ';">🟢</span>';
+    html += '<span class="student-name">' + escapeHtml(s.name || s.user_id) + '</span>';
+    html += '<span class="question-badge ' + badgeClass + '">' + (s.current_question || 1) + '/' + (s.total_questions || totalQuestions) + '</span>';
+    html += '</div>';
+    html += '<div class="student-preview">' + escapeHtml(s.condition) + '组</div>';
+    html += '</div>';
+    html += '<button class="btn-detail" onclick="event.stopPropagation();selectStudent(' + s.user_id + ')">详情</button>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function updateStudentSummary() {
+  var el = document.getElementById('studentListSummary');
+  if (!el) return;
+  var counts = {};
+  studentData.forEach(function(s) { counts[s.condition] = (counts[s.condition] || 0) + 1; });
+  var parts = Object.keys(counts).map(function(k) { return k + ':' + counts[k]; });
+  el.textContent = '共' + studentData.length + '人 ' + parts.join(' ');
+}
+
+// ====== 选中学生 ======
+function selectStudent(userId, silent) {
+  selectedStudentId = userId;
+  // 高亮
+  var items = document.querySelectorAll('.student-item');
+  items.forEach(function(item) { item.style.background = ''; });
+  // 找到对应的DOM元素
+  var allItems = document.getElementById('studentListBody').children;
+  for (var i = 0; i < allItems.length; i++) {
+    if (allItems[i].classList.contains('student-item')) {
+      allItems[i].style.background = '';
+    }
+  }
+  // 查找当前点击的项
+  var evt = silent ? null : (event || window.event);
+  if (evt && evt.target) {
+    var el = evt.target.closest ? evt.target.closest('.student-item') : null;
+    if (el) el.style.background = '#eff6ff';
+  }
+
+  // 更新右侧详情
+  var student = null;
+  for (var i = 0; i < studentData.length; i++) {
+    if (studentData[i].user_id === userId) { student = studentData[i]; break; }
+  }
+  if (student) {
+    document.getElementById('detailName').textContent = student.name || student.user_id;
+    document.getElementById('detailMode').textContent = student.condition + '组 · Guide';
+    currentDetailQ = student.current_question || 1;
+    totalQuestions = student.total_questions || totalQuestions;
+    document.getElementById('detailHelpRemain').textContent = student.condition === 'TCA' ? '可接收教师干预' : '非TCA组';
+  }
+  updateDetailUI();
+  loadStudentHistory(userId, currentDetailQ);
+}
+
+// ====== 题目导航 ======
+function navigateQuestion(delta) {
+  currentDetailQ = Math.max(1, Math.min(totalQuestions, currentDetailQ + delta));
+  updateDetailUI();
+}
+
+function updateDetailUI() {
+  document.getElementById('detailQNumber').textContent = '第 ' + currentDetailQ + ' 题 / 共 ' + totalQuestions + ' 题';
+  document.getElementById('detailScore').textContent = '评分: —';
+  document.getElementById('detailStatus').textContent = '(待观察)';
+  document.getElementById('detailMeta').textContent = '知识点: — | 状态: 待提交';
+}
+
+function loadStudentHistory(userId, questionId) {
+  var body = document.getElementById('chatHistoryBody');
+  if (!body) return;
+  body.innerHTML = '<div class="chat-line system">正在加载对话历史...</div>';
+  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(questionId), { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success || !data.messages || data.messages.length === 0) {
+        body.innerHTML = '<div class="chat-line system">该题暂无对话历史。</div>';
+        return;
+      }
+      body.innerHTML = data.messages.map(function(m) {
+        var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
+        return '<div class="chat-line">' + escapeHtml(who + ': ' + m.content) + '</div>';
+      }).join('');
+    })
+    .catch(function() {
+      body.innerHTML = '<div class="chat-line system">对话历史加载失败。</div>';
+    });
+}
+
+// ====== 退出登录 ======
+function doLogout() {
+  fetch(API_BASE + '/api/auth/logout', {
+    method: 'POST', credentials: 'include'
+  }).then(function() { window.location.href = 'login.html'; })
+    .catch(function() { window.location.href = 'login.html'; });
+}
+
+// ====== 可折叠切换 ======
+function toggleCollapse(sectionId) {
+  var section = document.getElementById(sectionId);
+  section.classList.toggle('collapsed');
+  var arrow = section.querySelector('.collapsible-title');
+  if (arrow) {
+    if (section.classList.contains('collapsed')) {
+      arrow.textContent = arrow.textContent.replace('▾', '▸');
+    } else {
+      arrow.textContent = arrow.textContent.replace('▸', '▾');
+    }
+  }
+}
+
+// ====== 干预操作（预留API接口） ======
+function sendIntervention() {
+  var selectEl = document.querySelector('.intervention-form select');
+  var textareaEl = document.querySelector('.intervention-textarea');
+  if (!selectEl || !textareaEl) return;
+  var targetMode = selectEl.value;
+  var content = textareaEl.value.trim();
+  if (!content) { alert('请输入干预内容'); return; }
+  if (!selectedStudentId) { alert('请先选择一个学生'); return; }
+
+  var data = {
+    student_id: selectedStudentId,
+    target_agent: targetMode,
+    intervention_type: 'manual_override',
+    trigger_event_id: latestTriggerEventId,
+    content: content
+  };
+  fetch(API_BASE + '/api/teacher/intervene', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success) {
+        alert('干预已发送');
+        addLog('干预 [' + targetMode + '] 内容已发送');
+      } else {
+        alert('发送失败: ' + (resp.error || '未知错误'));
+      }
+    })
+    .catch(function() {
+      // 后端API未实现时本地模拟
+      alert('干预已发送（离线模式）');
+      addLog('干预 [' + targetMode + '] 内容已发送（离线）');
+    });
+  textareaEl.value = '';
+}
+
+// "保持现状"按钮
+function keepCurrent() {
+  if (!selectedStudentId) { alert('请先选择一个学生'); return; }
+  alert('已保持现状');
+  addLog('保持现状');
+}
+
+// "全部已读"
+function markAllRead() {
+  fetch(API_BASE + '/api/teacher/help-requests/read-all', {
+    method: 'POST',
+    credentials: 'include'
+  }).catch(function() {});
+  var body = document.getElementById('pendingBody');
+  if (body) {
+    body.innerHTML = '<div class="empty-state" id="pendingEmpty" style="padding:16px 12px;color:var(--color-text-tertiary);font-size:12px;text-align:center;">暂无待处理请求</div>';
+  }
+  pendingCount = 0;
+  pendingKeys = {};
+  updatePendingTitle();
+}
+
+function addLog(text) {
+  var body = document.querySelector('.log-body');
+  if (!body) return;
+  var now = new Date();
+  var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  var div = document.createElement('div');
+  div.className = 'log-entry';
+  div.textContent = time + ' → ' + text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(text != null ? String(text) : ''));
+  return d.innerHTML;
+}
+
+function pendingItemKey(item) {
+  if (item.request_id) return 'request:' + item.request_id;
+  if (item.trigger_event_id) return 'trigger:' + item.trigger_event_id;
+  return [
+    'fallback',
+    item.student_id || '',
+    item.question_id || '',
+    item.type || '',
+    item.desc || ''
+  ].join(':');
+}
+
+// ====== 启动 ======
+initPage();
+</script>
+</body>
+</html>

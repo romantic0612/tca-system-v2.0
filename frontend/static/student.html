@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA-System 学生端</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8f9fa;
+    --color-border-tertiary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-c-blue-600: #2563eb;
+    --color-c-blue-800: #1e40af;
+    --color-c-blue-50: #eff6ff;
+    --color-c-blue-200: #bfdbfe;
+    --color-c-amber-50: #fffbeb;
+    --color-c-amber-200: #fde68a;
+    --color-c-amber-600: #d97706;
+    --color-c-amber-800: #92400e;
+    --color-c-coral-600: #e11d48;
+    --color-c-purple-400: #c084fc;
+    --color-c-purple-600: #7c3aed;
+    --color-c-teal-600: #0d9488;
+    --color-c-green-600: #059669;
+    --color-c-gray-500: #6b7280;
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f0f2f5;
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .page-wrapper {
+    max-width: 720px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+  }
+  .card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  /* 顶栏 */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-username {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .topbar-group {
+    font-size: 11px;
+    color: var(--color-c-coral-600);
+  }
+  .topbar-logout {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+  }
+  .topbar-logout:hover {
+    color: var(--color-c-coral-600);
+  }
+
+  /* 题目区域 */
+  .question-area {
+    padding: 14px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+  }
+  .question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .question-number {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .question-attempt {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .question-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #374151;
+    margin-bottom: 10px;
+    flex: 1;
+  }
+  .question-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .nav-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover:not(:disabled) {
+    border-color: var(--color-c-blue-600);
+    color: var(--color-c-blue-600);
+  }
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .answer-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .answer-input {
+    flex: 1;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 7px 12px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: var(--font-sans);
+  }
+  .answer-input:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  }
+  .submit-btn {
+    padding: 7px 14px;
+    background: var(--color-c-blue-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+  }
+  .submit-btn:hover {
+    background: #1d4ed8;
+  }
+
+  /* 对话区域 */
+  .chat-area {
+    padding: 12px 16px;
+    min-height: 280px;
+    max-height: 420px;
+    overflow-y: auto;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .chat-message {
+    margin-bottom: 14px;
+  }
+  .msg-agent-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .msg-agent-name {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .msg-mode-tag {
+    font-size: 11px;
+  }
+  .msg-bubble {
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 14px;
+    max-width: 85%;
+    display: inline-block;
+  }
+  .msg-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .msg-time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+  .msg-user {
+    text-align: right;
+  }
+  .msg-user .msg-bubble {
+    text-align: left;
+  }
+
+  /* 解释气泡 */
+  .exp-bubble {
+    border: 0.5px solid var(--color-c-amber-200);
+    background: var(--color-c-amber-50);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 14px;
+    max-width: 90%;
+    display: inline-block;
+  }
+  .exp-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .exp-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-c-amber-800);
+  }
+  .exp-time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* 教师通知气泡 */
+  .teacher-bubble {
+    border: 0.5px solid var(--color-c-blue-200);
+    background: var(--color-c-blue-50);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 14px;
+    max-width: 90%;
+    display: inline-block;
+  }
+  .teacher-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .teacher-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e40af;
+  }
+  .teacher-info {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+  .teacher-note-wrapper {
+    opacity: 0.7;
+    margin-bottom: 14px;
+  }
+
+  /* 底部操作栏 */
+  .bottom-bar {
+    padding: 12px 16px;
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .chat-input {
+    flex: 1;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 9px 12px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: var(--font-sans);
+  }
+  .chat-input:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  }
+  .send-btn {
+    padding: 9px 18px;
+    background: var(--color-c-blue-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+  }
+  .send-btn:hover {
+    background: #1d4ed8;
+  }
+
+  /* 求助按钮 + 对话框 (仅TCA组可见) */
+  .help-section {
+    margin-top: 6px;
+    position: relative;
+  }
+  .help-trigger {
+    font-size: 12px;
+    color: var(--color-c-coral-600);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .help-trigger:hover {
+    text-decoration: underline;
+  }
+  .help-trigger.disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+  .help-remain {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .help-dialog {
+    display: none;
+    position: absolute;
+    left: calc(100% + 10px);
+    top: -12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 300px;
+    z-index: 10;
+  }
+  .help-dialog.show {
+    display: block;
+  }
+  /* 帮助对话框三角箭头指向按钮 */
+  .help-dialog::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-right: 8px solid var(--color-border-secondary);
+  }
+  .help-dialog::after {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 20px;
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-right: 8px solid white;
+  }
+  .help-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .help-dialog-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .help-close {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+    line-height: 1;
+  }
+  .help-close:hover {
+    color: var(--color-c-coral-600);
+  }
+  .help-textarea {
+    width: 100%;
+    height: 56px;
+    padding: 8px 10px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    box-sizing: border-box;
+    font-family: var(--font-sans);
+    transition: border-color 0.2s;
+  }
+  .help-textarea:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  }
+  .help-submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+  .help-send-btn {
+    padding: 5px 14px;
+    background: var(--color-c-coral-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+  }
+  .help-send-btn:hover {
+    background: #be123c;
+  }
+
+  .footer {
+    padding: 8px 16px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+  }
+
+  /* 四组差异表格 */
+  .diff-table-section {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .diff-table-section h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #111827;
+  }
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .diff-table th {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 7px 10px;
+    background: var(--color-background-secondary);
+    text-align: left;
+    font-weight: 500;
+    color: #374151;
+  }
+  .diff-table td {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 7px 10px;
+    text-align: center;
+  }
+  .diff-cell-green { color: var(--color-c-green-600); }
+  .diff-cell-purple { color: var(--color-c-purple-600); }
+  .diff-cell-amber { color: var(--color-c-amber-600); }
+  .diff-cell-coral { color: var(--color-c-coral-600); }
+  .diff-cell-muted { color: var(--color-text-tertiary); }
+  .diff-cell-deleted {
+    background: #fef2f2;
+    color: #dc2626;
+    font-weight: 500;
+  }
+</style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/websocket.js"></script>
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- 学生端主卡 -->
+  <div class="card">
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <div class="topbar-title">TCA-System</div>
+      <div class="topbar-right">
+        <span class="topbar-username" id="studentUsername">加载中...</span>
+        <span class="topbar-group" id="studentGroup">—</span>
+        <span class="topbar-logout" onclick="doLogout()">退出</span>
+      </div>
+    </div>
+
+    <!-- 题目区域（固定高度 ~140px） -->
+    <div class="question-area" id="questionArea">
+      <div class="question-header">
+        <span class="question-number" id="qNumber">第 3/8 题</span>
+        <span class="question-attempt" id="qAttempt">(未提交)</span>
+      </div>
+      <div class="question-text" id="qText">
+        📝 已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。
+      </div>
+      <div class="question-nav">
+        <button class="nav-btn" id="prevBtn" disabled>← 上一题</button>
+        <button class="nav-btn" id="nextBtn">下一题 →</button>
+      </div>
+      <div class="answer-row">
+        <input class="answer-input" id="answerInput" placeholder="输入本题答案...">
+        <button class="submit-btn" id="submitAnswerBtn">提交</button>
+      </div>
+    </div>
+
+    <!-- 对话区域 -->
+    <div class="chat-area" id="chatArea"></div>
+
+    <!-- 底部操作栏 -->
+    <div class="bottom-bar">
+      <div class="input-row">
+        <input class="chat-input" id="chatInput" placeholder="输入消息与AI对话...">
+        <button class="send-btn" id="chatSendBtn">发送</button>
+      </div>
+      <!-- 求助区域（仅TCA组可见） -->
+      <div class="help-section" id="helpSection">
+        <span class="help-trigger" id="helpTrigger">
+          🆘 请求教师帮助
+        </span>
+        <span class="help-remain" id="helpRemain">(剩余 6/6 次)</span>
+
+        <div class="help-dialog" id="helpDialog">
+          <div class="help-dialog-header">
+            <span class="help-dialog-title">向教师发送求助</span>
+            <span class="help-close" id="helpClose">✕</span>
+          </div>
+          <textarea class="help-textarea" id="helpTextarea" placeholder="老师，我在这道题上卡住了..."></textarea>
+          <div class="help-submit-row">
+            <button class="help-send-btn" id="helpSendBtn">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      TCA-System · 华东师范大学 · v2.0
+    </div>
+  </div>
+</div>
+
+<script>
+var API_BASE = window.location.origin;
+var helpRemaining = 6;
+var helpLimit = 6;
+var currentQuestion = 3;
+var totalQuestions = 8;
+var userCondition = null;
+var userId = null;
+var wsClient = null;
+var currentAgent = 'Guide';
+var renderedMessageKeys = {};
+var historyTimer = null;
+var questions = {
+  1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
+  2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
+  3: '📝 已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。',
+  4: '📝 三角形三个内角的和是多少度？',
+  5: '📝 选择题：请选择正确选项。（测试题，标准答案为 A）',
+  6: '📝 应用题：请写出你的推理过程。',
+  7: '📝 计算题：请完成本题并填写最终答案。',
+  8: '📝 综合题：请根据题意给出答案。'
+};
+
+// ====== 页面初始化：检查登录态 & 获取学生信息 ======
+function initPage() {
+  // 先检查登录态
+  fetch(API_BASE + '/api/auth/check', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.logged_in) {
+        window.location.href = 'login.html';
+        return;
+      }
+      userId = data.user_info.user_id;
+      initWebSocket();
+      // 获取学生详细信息
+      return fetch(API_BASE + '/api/student/info', { credentials: 'include' });
+    })
+    .then(function(r) { return r ? r.json() : null; })
+    .then(function(data) {
+      if (data && data.success) {
+        var info = data.user_info;
+        document.getElementById('studentUsername').textContent = info.name || info.user_id;
+        document.getElementById('studentGroup').textContent = info.condition + '组';
+        userCondition = info.condition;
+        currentQuestion = Number(info.current_question || currentQuestion);
+        if (currentQuestion < 3) {
+          currentQuestion = 3;
+        }
+        totalQuestions = Number(info.total_questions || totalQuestions);
+        updateQuestionUI();
+        loadChatHistory();
+        startHistoryPolling();
+        renderInitialGuide();
+        // 根据条件控制UI显示
+        applyConditionUI(info.condition);
+      } else if (data) {
+        // 如果student info没找到，至少显示user_id
+        document.getElementById('studentUsername').textContent = '学生 ' + userId;
+      }
+    })
+    .catch(function(err) {
+      console.error('初始化失败:', err);
+    });
+}
+
+function initWebSocket() {
+  if (wsClient || !window.TCAWebSocket) return;
+  wsClient = new TCAWebSocket();
+  wsClient.on('teacher_override', function(data) {
+    var content = data.content || '教师发送了一条干预提示';
+    addTeacherMessage(content, data.teacher_id, data.timestamp, 'teacher-ws-' + (data.trigger_event_id || Date.now()));
+    setTimeout(loadChatHistory, 800);
+  });
+  wsClient.connect();
+}
+
+// ====== 根据实验条件控制UI ======
+function applyConditionUI(condition) {
+  // 帮助按钮：仅TCA组可见
+  var helpSection = document.getElementById('helpSection');
+  if (helpSection) {
+    helpSection.style.display = (condition === 'TCA') ? '' : 'none';
+  }
+}
+
+function renderInitialGuide() {
+  var chatArea = document.getElementById('chatArea');
+  if (!chatArea || chatArea.children.length > 0) return;
+  addChatMessage('guide', '我们先看当前题目。你可以直接提交答案，也可以先说说你的思路。');
+}
+
+// ====== 退出登录 ======
+function doLogout() {
+  fetch(API_BASE + '/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include'
+  }).then(function() {
+    window.location.href = 'login.html';
+  }).catch(function() {
+    window.location.href = 'login.html';
+  });
+}
+
+// ====== 求助按钮交互（仅TCA组） ======
+document.getElementById('helpTrigger').addEventListener('click', function(e) {
+  if (helpRemaining <= 0) return;
+  var dialog = document.getElementById('helpDialog');
+  dialog.classList.toggle('show');
+  if (dialog.classList.contains('show')) {
+    document.getElementById('helpTextarea').focus();
+  }
+});
+
+document.getElementById('helpClose').addEventListener('click', function() {
+  document.getElementById('helpDialog').classList.remove('show');
+});
+
+document.addEventListener('click', function(e) {
+  var dialog = document.getElementById('helpDialog');
+  var trigger = document.getElementById('helpTrigger');
+  if (dialog.classList.contains('show') && !dialog.contains(e.target) && !trigger.contains(e.target)) {
+    dialog.classList.remove('show');
+  }
+});
+
+document.getElementById('helpSendBtn').addEventListener('click', function() {
+  var text = document.getElementById('helpTextarea').value.trim();
+  if (!text) {
+    alert('请输入求助内容');
+    return;
+  }
+  if (helpRemaining <= 0) return;
+  helpRemaining--;
+  document.getElementById('helpRemain').textContent = '(剩余 ' + helpRemaining + '/' + helpLimit + ' 次)';
+  document.getElementById('helpDialog').classList.remove('show');
+  document.getElementById('helpTextarea').value = '';
+  if (helpRemaining <= 0) {
+    document.getElementById('helpTrigger').classList.add('disabled');
+    document.getElementById('helpTrigger').textContent = '求助次数已用尽';
+  }
+  // 发送求助到后端（预留API接口）
+  var data = { student_id: userId, content: text, question_id: currentQuestion };
+  fetch(API_BASE + '/api/teacher/help-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).catch(function() {
+    // 后端API尚未实现时静默失败
+    console.log('求助已记录（离线模式）');
+  });
+});
+
+// ====== 题目导航 ======
+document.getElementById('prevBtn').addEventListener('click', function() {
+  if (currentQuestion > 1) { currentQuestion--; updateQuestionUI(); }
+});
+document.getElementById('nextBtn').addEventListener('click', function() {
+  if (currentQuestion < totalQuestions) { currentQuestion++; updateQuestionUI(); }
+});
+// 提交答案按钮
+document.getElementById('submitAnswerBtn').addEventListener('click', function() {
+  var answer = document.getElementById('answerInput').value.trim();
+  if (!answer) { alert('请输入答案'); return; }
+  // 提交答案到后端（预留API接口）
+  var data = { student_id: userId, question_id: currentQuestion, answer: answer };
+  fetch(API_BASE + '/api/student/submit-answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success) {
+        document.getElementById('qAttempt').textContent = '(已提交)';
+        var feedback = '答案已提交，评分：' + (resp.score !== undefined ? resp.score + '/100' : '评分中...');
+        if (resp.error_type && resp.error_type !== 'none') {
+          feedback += '；错误类型：' + resp.error_type;
+        }
+        if (resp.error_streak !== undefined) {
+          feedback += '；错误累计：' + Number(resp.error_streak).toFixed(1);
+        }
+        if (resp.triggered) {
+          feedback += '；已触发：' + resp.trigger_level + '（' + resp.trigger_strength + '）';
+        }
+        if (resp.switched) {
+          currentAgent = resp.current_agent || currentAgent;
+          feedback += '；当前模式切换为：' + currentAgent;
+        }
+        if (resp.suggestion) {
+          feedback += '。' + resp.suggestion;
+        }
+        addChatMessage('system', feedback);
+        if (resp.explanation) {
+          addChatMessage('guide', resp.explanation);
+        }
+      } else {
+        addChatMessage('system', '答案提交失败');
+      }
+    }).catch(function() {
+      // 后端API尚未实现时本地模拟
+      addChatMessage('system', '答案已提交（离线模式）');
+    });
+  document.getElementById('answerInput').value = '';
+});
+
+function updateQuestionUI() {
+  document.getElementById('qNumber').textContent = '第 ' + currentQuestion + '/' + totalQuestions + ' 题';
+  document.getElementById('prevBtn').disabled = currentQuestion === 1;
+  document.getElementById('nextBtn').disabled = currentQuestion === totalQuestions;
+  document.getElementById('qAttempt').textContent = '(未提交)';
+  document.getElementById('qText').textContent = questions[currentQuestion] || '📝 请完成当前题目。';
+  renderedMessageKeys = {};
+  document.getElementById('chatArea').innerHTML = '';
+  loadChatHistory();
+}
+
+// ====== 聊天功能 ======
+document.getElementById('chatSendBtn').addEventListener('click', function() {
+  var msg = document.getElementById('chatInput').value.trim();
+  if (!msg) return;
+  addChatMessage('user', msg);
+  document.getElementById('chatInput').value = '';
+  // 发送消息到后端（预留API接口）
+  var data = { student_id: userId, question_id: currentQuestion, message: msg };
+  fetch(API_BASE + '/api/student/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success && resp.reply) {
+        currentAgent = resp.agent || currentAgent;
+        addChatMessage('guide', resp.reply, null, 'assistant-local-' + Date.now());
+      }
+    }).catch(function() {
+      // 后端API尚未实现时本地模拟回复
+      var replies = [
+        '让我们一步步分析这个问题。',
+        '你能先告诉我已知条件是什么吗？',
+        '想想看，三角形内角和是多少度？',
+        '不错，继续往这个方向思考。',
+      ];
+      var reply = replies[Math.floor(Math.random() * replies.length)];
+      addChatMessage('guide', reply);
+    });
+});
+
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('chatSendBtn').click();
+  }
+});
+
+document.getElementById('answerInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('submitAnswerBtn').click();
+  }
+});
+
+function addChatMessage(type, content, timeValue, key) {
+  if (key && renderedMessageKeys[key]) return;
+  if (key) renderedMessageKeys[key] = true;
+  var chatArea = document.getElementById('chatArea');
+  var div = document.createElement('div');
+  div.className = 'chat-message' + (type === 'user' ? ' msg-user' : '');
+  var now = timeValue ? new Date(timeValue) : new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  if (type === 'guide') {
+    div.innerHTML = '<div class="msg-agent-label"><span class="msg-agent-name" style="color: var(--color-c-blue-600);">' + escapeHtml(currentAgent) + '</span><span class="msg-mode-tag" style="color: var(--color-c-purple-400);">(当前模式)</span></div><div class="msg-bubble"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  } else if (type === 'system') {
+    div.innerHTML = '<div class="msg-bubble" style="background: var(--color-c-amber-50);"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="msg-bubble"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  }
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addTeacherMessage(content, teacherId, timeValue, key) {
+  if (key && renderedMessageKeys[key]) return;
+  if (key) renderedMessageKeys[key] = true;
+  var chatArea = document.getElementById('chatArea');
+  var div = document.createElement('div');
+  div.className = 'teacher-note-wrapper';
+  var now = timeValue ? new Date(timeValue) : new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  div.innerHTML = '<div class="chat-message"><div class="msg-agent-label"><span class="msg-agent-name">教师通知</span></div><div class="teacher-bubble"><span class="teacher-label">教师通知</span><p>' + escapeHtml(content) + '</p><div class="teacher-info">' + timeStr + ' · ' + escapeHtml(teacherId || 'teacher') + '</div></div></div>';
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function loadChatHistory() {
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(currentQuestion), { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      (data.messages || []).forEach(function(msg) {
+        var key = [msg.agent, msg.type, msg.time, msg.content].join('|');
+        if (renderedMessageKeys[key]) return;
+        if (msg.type === 'user') {
+          addChatMessage('user', msg.content, msg.time, key);
+        } else if (msg.type === 'teacher') {
+          addTeacherMessage(msg.content, msg.agent, msg.time, key);
+        } else if (msg.type === 'assistant') {
+          currentAgent = msg.agent || currentAgent;
+          addChatMessage('guide', msg.content, msg.time, key);
+        } else {
+          addChatMessage('system', msg.content, msg.time, key);
+        }
+      });
+    })
+    .catch(function() {});
+}
+
+function startHistoryPolling() {
+  if (historyTimer) clearInterval(historyTimer);
+  historyTimer = setInterval(loadChatHistory, 3000);
+}
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(text));
+  return d.innerHTML;
+}
+
+// ====== 启动 ======
+initPage();
+</script>
+</body>
+</html>
