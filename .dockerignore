@@ -6,3 +6,5 @@ __pycache__/
 .env
 reports/rendered/
 *.log
+frontend/vue-app/node_modules/
+frontend/vue-app/dist/

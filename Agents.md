@@ -1,5 +1,48 @@
 # TCA-System V2.0 项目说明
 
+## 最新部署策略：云端优先运行 Vue3 版本
+
+现在项目已经按“Vue3 + Element Plus + 组件化”的 V2.0 方向调整部署方式：
+
+- 云服务器 Docker 构建时会自动构建 `frontend/vue-app`。
+- Flask 后端启动后会优先服务 `frontend/vue-app/dist/index.html`。
+- Vue Router 的 `/login`、`/student`、`/teacher`、`/admin` 路由由 Flask fallback 到 `index.html` 支持。
+- 如果本地没有 Vue 构建产物，Flask 才会回退到旧的 `frontend/static` 页面，作为开发兜底。
+- 后续本地改代码后，推到 GitHub；服务器只需要 `git pull` + `docker compose up -d --build`。
+
+相关改动文件：
+
+- `Dockerfile`：改为多阶段构建，第一阶段 Node 构建 Vue，第二阶段 Python 运行 Flask。
+- `backend/app.py`：静态文件服务改为优先 Vue dist，并支持 Vue Router history fallback。
+- `.dockerignore`：排除 `frontend/vue-app/node_modules/` 和 `frontend/vue-app/dist/`。
+- `frontend/vue-app/`：V2.0 前端工程入口。
+
+服务器更新命令：
+
+```bash
+cd /root/tca-system-v2.0-github
+git pull
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=80
+```
+
+云端访问地址：
+
+```text
+http://服务器IP:8501/
+http://服务器IP:8501/login
+http://服务器IP:8501/student
+http://服务器IP:8501/teacher
+http://服务器IP:8501/admin
+```
+
+注意：
+
+- 现在云端主入口不再是 `/login.html`，而是 `/login` 或 `/`。
+- 旧静态页面还保留在 `frontend/static`，但 Docker 云端会优先跑 Vue。
+- `.env` 仍然只放服务器，不上传 GitHub。
+
 ## 项目简介
 
 TCA-System 是一个面向 K-12 学习场景的“教师可控多智能体 AI 辅导系统”原型。系统用学生端、教师端、管理端三类页面串起一个教学实验流程：

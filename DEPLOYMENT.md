@@ -1,5 +1,23 @@
 # TCA-System V2.0 服务器 Docker 部署说明
 
+## 当前云端入口
+
+当前 Docker 构建会优先运行 Vue3 版本：
+
+- 构建阶段：`frontend/vue-app` -> `frontend/vue-app/dist`
+- 运行阶段：Flask + Socket.IO 服务 API，并托管 Vue dist
+- 访问入口：`/`、`/login`、`/student`、`/teacher`、`/admin`
+
+服务器更新：
+
+```bash
+cd /root/tca-system-v2.0-github
+git pull
+docker compose up -d --build
+```
+
+如果 GitHub 连接失败，再临时用 zip 或手动复制文件；正常协作优先使用 `git pull`。
+
 目标访问地址：
 
 ```text

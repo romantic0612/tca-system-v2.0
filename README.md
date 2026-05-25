@@ -117,6 +117,35 @@ python test_flask.py
 
 完整服务器步骤见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
+## Vue 云端部署
+
+当前 Docker 已改为优先构建并服务 `frontend/vue-app`。
+
+服务器同步代码并部署：
+
+```bash
+cd /root/tca-system-v2.0-github
+git pull
+docker compose up -d --build
+```
+
+构建流程：
+
+1. Node 阶段执行 `npm ci` 和 `npm run build`，生成 Vue dist。
+2. Python 阶段运行 Flask + Socket.IO。
+3. Flask 优先服务 `frontend/vue-app/dist/index.html`。
+4. 本地没有 Vue dist 时，才回退到 `frontend/static`。
+
+访问地址：
+
+```text
+http://服务器IP:8501/
+http://服务器IP:8501/login
+http://服务器IP:8501/student
+http://服务器IP:8501/teacher
+http://服务器IP:8501/admin
+```
+
 ## 安全说明
 
 - 不要提交 `.env`、`.env.server`、数据库文件或真实 API Key。

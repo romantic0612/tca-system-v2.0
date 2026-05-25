@@ -6,7 +6,7 @@ TCA-System V2.0 Flask应用工厂
 创建并配置Flask应用实例，集成WebSocket
 """
 
-from flask import Flask, send_from_directory
+from flask import Flask, abort, send_from_directory
 from flask_socketio import SocketIO
 import sys
 import os
@@ -18,12 +18,41 @@ from backend.core.database.schema import init_database, create_default_accounts
 
 socketio = SocketIO(cors_allowed_origins="*")
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VUE_DIST_DIR = os.path.join(ROOT_DIR, 'frontend', 'vue-app', 'dist')
+STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')
+
+
+def get_frontend_dir():
+    """Prefer the Vue build output; fall back to legacy static pages for dev."""
+    vue_index = os.path.join(VUE_DIST_DIR, 'index.html')
+    if os.path.exists(vue_index):
+        return VUE_DIST_DIR
+    return STATIC_DIR
+
+
+def serve_frontend_file(frontend_dir, filename):
+    if filename.startswith('api/'):
+        abort(404)
+
+    target_path = os.path.join(frontend_dir, filename)
+    if os.path.exists(target_path) and os.path.isfile(target_path):
+        return send_from_directory(frontend_dir, filename)
+
+    # Vue Router uses history mode, so page routes need to return index.html.
+    vue_index = os.path.join(frontend_dir, 'index.html')
+    if os.path.exists(vue_index):
+        return send_from_directory(frontend_dir, 'index.html')
+
+    return send_from_directory(frontend_dir, filename)
+
 def create_app():
+    frontend_dir = get_frontend_dir()
     app = Flask(
         __name__,
-        static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static'),
-        static_url_path=''
+        static_folder=None,
     )
+    app.static_folder = frontend_dir
     
     app.config['SECRET_KEY'] = config.SECRET_KEY
     app.config['SESSION_COOKIE_NAME'] = config.SESSION_COOKIE_NAME
@@ -45,11 +74,13 @@ def create_app():
     
     @app.route('/')
     def index():
+        if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+            return send_from_directory(app.static_folder, 'index.html')
         return send_from_directory(app.static_folder, 'login.html')
     
     @app.route('/<path:filename>')
     def serve_static(filename):
-        return send_from_directory(app.static_folder, filename)
+        return serve_frontend_file(app.static_folder, filename)
     
     @app.route('/api')
     def api_info():
