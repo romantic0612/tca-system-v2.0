@@ -36,6 +36,7 @@ const form = reactive({ userId: '', password: '' });
 async function submit() {
   try {
     const user = await auth.login(form.userId, form.password);
+    if (!user?.role) throw new Error('登录响应缺少角色信息');
     const target = user.role === 'student' ? '/student' : user.role === 'teacher' ? '/teacher' : '/admin';
     await router.push(target);
   } catch (error) {
