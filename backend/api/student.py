@@ -482,6 +482,8 @@ def get_history():
     """
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': '未登录'}), 401
+    if session.get('role') != 'student':
+        return jsonify({'success': False, 'error': '仅限学生使用'}), 403
     
     try:
         student_id = session['user_id']
@@ -561,6 +563,8 @@ def get_info():
     """获取学生个人信息"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': '未登录'}), 401
+    if session.get('role') != 'student':
+        return jsonify({'success': False, 'error': '仅限学生使用'}), 403
     try:
         student_id = session['user_id']
         conn = get_connection()

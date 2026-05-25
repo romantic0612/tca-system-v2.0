@@ -616,6 +616,15 @@ function initPage() {
         window.location.href = 'login.html';
         return;
       }
+      if (data.role !== 'student') {
+        var routes = {
+          teacher: 'teacher.html',
+          admin_exp: 'admin.html',
+          admin_sys: 'admin.html'
+        };
+        window.location.href = routes[data.role] || 'login.html';
+        return;
+      }
       userId = data.user_info.user_id;
       initWebSocket();
       // 获取学生详细信息
