@@ -967,7 +967,7 @@ function renderDiagnosis(data, item) {
     lines.push('<div class="chat-line system">最近对话</div>');
     data.messages.forEach(function(m) {
       var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-      lines.push('<div class="chat-line">' + escapeHtml(who + ': ' + normalizeMathText(m.content)) + '</div>');
+      lines.push('<div class="chat-line">' + escapeHtml(formatMessageTime(m.time) + ' · ' + who + ': ' + normalizeMathText(m.content)) + '</div>');
     });
   } else {
     lines.push('<div class="chat-line system">该题暂无对话历史。</div>');
@@ -1089,7 +1089,7 @@ function loadStudentHistory(userId, questionId) {
       }
       body.innerHTML = data.messages.map(function(m) {
         var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-        return '<div class="chat-line">' + escapeHtml(who + ': ' + normalizeMathText(m.content)) + '</div>';
+        return '<div class="chat-line">' + escapeHtml(formatMessageTime(m.time) + ' · ' + who + ': ' + normalizeMathText(m.content)) + '</div>';
       }).join('');
     })
     .catch(function() {
@@ -1210,6 +1210,18 @@ function normalizeMathText(text) {
     .replace(/\\circ/g, '°')
     .replace(/\^\{?°\}?/g, '°')
     .replace(/\\,/g, ' ');
+}
+
+function formatMessageTime(timeValue) {
+  var value = timeValue;
+  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
+    value += 'Z';
+  }
+  var now = value ? new Date(value) : new Date();
+  if (Number.isNaN(now.getTime())) {
+    now = new Date();
+  }
+  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 }
 
 function pendingItemKey(item) {
