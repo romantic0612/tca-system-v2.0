@@ -494,14 +494,14 @@ def get_history():
         
         if question_id:
             cursor.execute('''
-                SELECT agent_name, message_type, content, created_at 
+                SELECT agent_name, message_type, content, created_at, override_id
                 FROM chat_messages 
                 WHERE student_id = ? AND question_id = ?
                 ORDER BY created_at ASC
             ''', (student_id, question_id))
         else:
             cursor.execute('''
-                SELECT agent_name, message_type, content, created_at 
+                SELECT agent_name, message_type, content, created_at, override_id
                 FROM chat_messages 
                 WHERE student_id = ?
                 ORDER BY created_at DESC
@@ -514,7 +514,8 @@ def get_history():
                 'agent': row[0],
                 'type': row[1],
                 'content': row[2],
-                'time': row[3]
+                'time': row[3],
+                'override_id': row[4],
             })
         
         conn.close()
@@ -524,6 +525,96 @@ def get_history():
             'messages': messages
         })
     
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@student_bp.route('/overrides', methods=['GET'])
+def get_overrides():
+    """获取当前学生的教师 Override 列表和新消息。"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': '未登录'}), 401
+    if session.get('role') != 'student':
+        return jsonify({'success': False, 'error': '仅限学生使用'}), 403
+
+    try:
+        student_id = session['user_id']
+        last_override_id = request.args.get('last_override_id', default=0, type=int)
+        question_id = request.args.get('question_id', type=int)
+        limit = request.args.get('limit', default=20, type=int)
+        limit = min(max(limit, 1), 50)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT id, teacher_id, override_type, intervention_type, content,
+                   question_id, created_at, status, trigger_event_id, feedback, feedback_at
+            FROM teacher_overrides
+            WHERE student_id = ?
+              AND teacher_id != 0
+              AND (? IS NULL OR question_id = ?)
+            ORDER BY id DESC
+            LIMIT ?
+        ''', (student_id, question_id, question_id, limit))
+        overrides = [dict(row) for row in cursor.fetchall()]
+
+        cursor.execute('''
+            SELECT id, teacher_id, override_type, intervention_type, content,
+                   question_id, created_at, status, trigger_event_id, feedback, feedback_at
+            FROM teacher_overrides
+            WHERE student_id = ?
+              AND teacher_id != 0
+              AND id > ?
+              AND (? IS NULL OR question_id = ?)
+            ORDER BY id ASC
+        ''', (student_id, last_override_id, question_id, question_id))
+        new_overrides = [dict(row) for row in cursor.fetchall()]
+        latest_override_id = max([row['id'] for row in overrides], default=last_override_id)
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'overrides': overrides,
+            'new_overrides': new_overrides,
+            'latest_override_id': latest_override_id,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@student_bp.route('/overrides/<int:override_id>/feedback', methods=['POST'])
+def submit_override_feedback(override_id):
+    """记录学生对教师 Override 的反馈。"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': '未登录'}), 401
+    if session.get('role') != 'student':
+        return jsonify({'success': False, 'error': '仅限学生使用'}), 403
+
+    try:
+        data = request.get_json(silent=True) or {}
+        feedback_type = data.get('feedback_type')
+        if feedback_type not in ['helpful', 'unclear']:
+            return jsonify({'success': False, 'error': '反馈类型无效'}), 400
+
+        student_id = session['user_id']
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id FROM teacher_overrides WHERE id = ? AND student_id = ? AND teacher_id != 0',
+            (override_id, student_id)
+        )
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'error': 'Override不存在'}), 404
+
+        cursor.execute(
+            'UPDATE teacher_overrides SET feedback = ?, feedback_at = ? WHERE id = ?',
+            (feedback_type, datetime.now().isoformat(), override_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'override_id': override_id, 'feedback': feedback_type})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

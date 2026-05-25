@@ -113,8 +113,8 @@ def intervene():
                 datetime.now().isoformat(),
             ))
         cursor.execute(
-            'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-            (student_id, f'Teacher-{teacher_id}', 'teacher', content, question_id, datetime.now().isoformat()),
+            'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, override_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (student_id, f'Teacher-{teacher_id}', 'teacher', content, question_id, override_id, datetime.now().isoformat()),
         )
         conn.commit()
         conn.close()
@@ -125,6 +125,7 @@ def intervene():
             sio = get_socketio()
             sio.emit('teacher_override', {
                 'teacher_id': teacher_id,
+                'override_id': override_id,
                 'override_type': target_agent,
                 'intervention_type': intervention_type,
                 'content': content,

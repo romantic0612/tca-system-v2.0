@@ -66,6 +66,7 @@ def init_database():
             message_type TEXT NOT NULL,
             content TEXT NOT NULL,
             question_id INTEGER,
+            override_id INTEGER,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -166,6 +167,21 @@ def init_database():
     
     try:
         cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN trigger_event_id INTEGER')
+    except:
+        pass
+
+    try:
+        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN feedback TEXT')
+    except:
+        pass
+
+    try:
+        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN feedback_at TEXT')
+    except:
+        pass
+
+    try:
+        cursor.execute('ALTER TABLE chat_messages ADD COLUMN override_id INTEGER')
     except:
         pass
     

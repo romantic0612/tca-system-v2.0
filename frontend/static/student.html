@@ -277,8 +277,182 @@
     text-align: right;
   }
   .teacher-note-wrapper {
-    opacity: 0.7;
     margin-bottom: 14px;
+  }
+  .override-notification {
+    margin: 0 16px;
+    border: 1px solid var(--color-c-amber-200);
+    background: var(--color-c-amber-50);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .override-notification.hidden {
+    display: none;
+  }
+  .override-notification-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .override-notification-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-c-amber-800);
+    margin-bottom: 2px;
+  }
+  .override-notification-text {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .override-notification-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .override-action-btn,
+  .feedback-btn {
+    border: 0.5px solid var(--color-border-secondary);
+    background: white;
+    border-radius: var(--border-radius-md);
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .override-action-btn.primary {
+    background: var(--color-c-blue-600);
+    border-color: var(--color-c-blue-600);
+    color: white;
+  }
+  .teacher-override-card {
+    border: 1px solid var(--color-c-amber-200);
+    background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 14px;
+    max-width: 92%;
+    display: inline-block;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .teacher-override-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .teacher-override-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .override-badge {
+    background: #fef3c7;
+    color: var(--color-c-amber-800);
+    border: 0.5px solid var(--color-c-amber-200);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .override-source {
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .override-time {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .teacher-override-content {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #111827;
+    margin: 0;
+  }
+  .override-meta {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    margin-top: 7px;
+  }
+  .override-feedback {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .feedback-btn.selected {
+    background: var(--color-c-blue-50);
+    border-color: var(--color-c-blue-200);
+    color: var(--color-c-blue-600);
+    font-weight: 600;
+  }
+  .override-history-panel {
+    position: fixed;
+    right: 18px;
+    top: 90px;
+    width: 220px;
+    max-height: 58vh;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    z-index: 20;
+    overflow: hidden;
+  }
+  .override-history-panel.collapsed .override-history-list {
+    display: none;
+  }
+  .override-history-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .override-history-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .override-history-count {
+    font-size: 11px;
+    color: var(--color-c-blue-600);
+  }
+  .override-history-list {
+    max-height: calc(58vh - 43px);
+    overflow-y: auto;
+  }
+  .override-history-item {
+    padding: 9px 12px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    cursor: pointer;
+  }
+  .override-history-item:hover {
+    background: var(--color-c-blue-50);
+  }
+  .override-history-item-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 3px;
+  }
+  .override-history-item-text {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* 底部操作栏 */
@@ -507,6 +681,29 @@
     color: #dc2626;
     font-weight: 500;
   }
+  @media (max-width: 900px) {
+    body { padding: 0; }
+    .card { border-radius: 0; min-height: 100vh; }
+    .teacher-override-card,
+    .msg-bubble,
+    .exp-bubble,
+    .teacher-bubble {
+      max-width: 100%;
+    }
+    .override-notification {
+      margin: 0 10px;
+      align-items: flex-start;
+    }
+    .override-notification-actions {
+      flex-direction: column;
+    }
+    .override-history-panel {
+      position: static;
+      width: auto;
+      max-height: none;
+      margin: 8px 10px 0;
+    }
+  }
 </style>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/js/websocket.js"></script>
@@ -526,6 +723,18 @@
     </div>
 
     <!-- 题目区域（固定高度 ~140px） -->
+    <div class="override-notification hidden" id="overrideNotification">
+      <div class="override-notification-main">
+        <div class="override-notification-title" id="overrideNoticeTitle">教师发来新的指导</div>
+        <div class="override-notification-text" id="overrideNoticeText"></div>
+      </div>
+      <div class="override-notification-actions">
+        <button class="override-action-btn primary" type="button" id="overrideNoticeView">查看</button>
+        <button class="override-action-btn" type="button" id="overrideNoticeLater">稍后</button>
+        <button class="override-action-btn" type="button" id="overrideNoticeDismiss">关闭</button>
+      </div>
+    </div>
+
     <div class="question-area" id="questionArea">
       <div class="question-header">
         <span class="question-number" id="qNumber">第 3/8 题</span>
@@ -578,6 +787,13 @@
       TCA-System · 华东师范大学 · v2.0
     </div>
   </div>
+  <div class="override-history-panel collapsed" id="overrideHistoryPanel">
+    <div class="override-history-header" id="overrideHistoryHeader">
+      <span class="override-history-title">教师指导</span>
+      <span class="override-history-count" id="overrideHistoryCount">0 条</span>
+    </div>
+    <div class="override-history-list" id="overrideHistoryList"></div>
+  </div>
 </div>
 
 <script>
@@ -592,9 +808,13 @@ var wsClient = null;
 var currentAgent = 'Guide';
 var renderedMessageKeys = {};
 var historyTimer = null;
+var overrideTimer = null;
 var chatSending = false;
 var pendingUserMessages = [];
 var activeHistoryRequest = 0;
+var lastOverrideId = 0;
+var latestNotificationOverride = null;
+var overrideNoticeTimer = null;
 var questions = {
   1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
   2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
@@ -644,6 +864,7 @@ function initPage() {
         totalQuestions = Number(info.total_questions || totalQuestions);
         updateQuestionUI();
         loadChatHistory();
+        loadOverrideHistory(true);
         startHistoryPolling();
         renderInitialGuide();
         // 根据条件控制UI显示
@@ -663,7 +884,14 @@ function initWebSocket() {
   wsClient = new TCAWebSocket();
   wsClient.on('teacher_override', function(data) {
     var content = data.content || '教师发送了一条干预提示';
-    addTeacherMessage(content, data.teacher_id, data.timestamp, 'teacher-ws-' + (data.trigger_event_id || Date.now()));
+    var override = normalizeOverridePayload(data);
+    showOverrideNotification(override);
+    var messageKey = data.override_id ? 'teacher-override-' + data.override_id : 'teacher-ws-' + (data.trigger_event_id || Date.now());
+    addTeacherMessage(content, data.teacher_id, data.timestamp, messageKey, override);
+    if (data.override_id && data.override_id > lastOverrideId) {
+      lastOverrideId = data.override_id;
+    }
+    loadOverrideHistory();
     setTimeout(loadChatHistory, 800);
   });
   wsClient.connect();
@@ -813,6 +1041,16 @@ function updateQuestionUI() {
 // ====== 聊天功能 ======
 document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
 document.getElementById('clearChatBtn').addEventListener('click', clearCurrentChat);
+document.getElementById('overrideNoticeDismiss').addEventListener('click', dismissOverrideNotification);
+document.getElementById('overrideNoticeLater').addEventListener('click', snoozeOverrideNotification);
+document.getElementById('overrideNoticeView').addEventListener('click', function() {
+  if (latestNotificationOverride) {
+    scrollToOverrideCard(latestNotificationOverride.id || latestNotificationOverride.override_id);
+  }
+});
+document.getElementById('overrideHistoryHeader').addEventListener('click', function() {
+  document.getElementById('overrideHistoryPanel').classList.toggle('collapsed');
+});
 
 function sendChatMessage() {
   if (chatSending) return;
@@ -881,17 +1119,144 @@ function addChatMessage(type, content, timeValue, key) {
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-function addTeacherMessage(content, teacherId, timeValue, key) {
+function addTeacherMessage(content, teacherId, timeValue, key, overrideData) {
   if (key && renderedMessageKeys[key]) return;
   if (key) renderedMessageKeys[key] = true;
   content = normalizeMathText(content);
+  var override = normalizeOverridePayload(overrideData || {});
+  override.content = content;
+  override.teacher_id = override.teacher_id || teacherId;
+  override.created_at = override.created_at || timeValue;
   var chatArea = document.getElementById('chatArea');
   var div = document.createElement('div');
   div.className = 'teacher-note-wrapper';
-  var timeStr = formatMessageTime(timeValue);
-  div.innerHTML = '<div class="chat-message"><div class="msg-agent-label"><span class="msg-agent-name">教师通知</span></div><div class="teacher-bubble"><span class="teacher-label">教师通知</span><p>' + escapeHtml(content) + '</p><div class="teacher-info">' + timeStr + ' · ' + escapeHtml(teacherId || 'teacher') + '</div></div></div>';
+  if (override.id || override.override_id) {
+    div.id = 'override-card-' + (override.id || override.override_id);
+  }
+  var timeStr = formatFullTime(override.created_at || timeValue);
+  var overrideId = Number(override.id || override.override_id || 0);
+  var feedbackHtml = overrideId ? buildFeedbackHtml(overrideId, override.feedback) : '';
+  div.innerHTML =
+    '<div class="chat-message">' +
+      '<div class="teacher-override-card">' +
+        '<div class="teacher-override-header">' +
+          '<div class="teacher-override-title">' +
+            '<span class="override-badge">教师Override</span>' +
+            '<span class="override-source">' + escapeHtml(getOverrideTypeLabel(override)) + '</span>' +
+          '</div>' +
+          '<span class="override-time">' + escapeHtml(timeStr) + '</span>' +
+        '</div>' +
+        '<p class="teacher-override-content">' + escapeHtml(content) + '</p>' +
+        '<div class="override-meta">' + escapeHtml(buildOverrideMeta(override)) + '</div>' +
+        feedbackHtml +
+      '</div>' +
+    '</div>';
   chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function normalizeOverridePayload(raw) {
+  raw = raw || {};
+  return {
+    id: raw.id || raw.override_id || null,
+    override_id: raw.override_id || raw.id || null,
+    teacher_id: raw.teacher_id || raw.teacherId || null,
+    override_type: raw.override_type || raw.target_agent || raw.agent || '',
+    intervention_type: raw.intervention_type || raw.type || 'manual_override',
+    content: raw.content || '',
+    question_id: raw.question_id || currentQuestion,
+    created_at: raw.created_at || raw.timestamp || raw.time || null,
+    trigger_event_id: raw.trigger_event_id || null,
+    feedback: raw.feedback || ''
+  };
+}
+
+function getOverrideTypeLabel(override) {
+  var type = (override.override_type || '').toString();
+  var intervention = (override.intervention_type || '').toString();
+  if (type === 'Tutor' || type === 'Guide' || type === 'Explorer') return '切换至 ' + type;
+  if (intervention === 'scaffold') return '分步提示';
+  if (intervention === 'redirect') return '思路引导';
+  if (intervention === 'encourage') return '学习鼓励';
+  if (intervention === 'direct') return '直接解释';
+  return '教师干预';
+}
+
+function buildOverrideMeta(override) {
+  var parts = [];
+  parts.push('题目：第 ' + (override.question_id || currentQuestion) + ' 题');
+  if (override.teacher_id) parts.push('教师：' + override.teacher_id);
+  if (override.trigger_event_id) parts.push('触发事件：' + override.trigger_event_id);
+  return parts.join(' · ');
+}
+
+function buildFeedbackHtml(overrideId, feedback) {
+  var helpfulClass = feedback === 'helpful' ? ' selected' : '';
+  var unclearClass = feedback === 'unclear' ? ' selected' : '';
+  var status = feedback ? '<span class="override-meta">已反馈：' + (feedback === 'helpful' ? '有帮助' : '不清楚') + '</span>' : '';
+  return '<div class="override-feedback" id="override-feedback-' + overrideId + '">' +
+    '<button class="feedback-btn' + helpfulClass + '" type="button" onclick="submitOverrideFeedback(' + overrideId + ', \'helpful\')">有帮助</button>' +
+    '<button class="feedback-btn' + unclearClass + '" type="button" onclick="submitOverrideFeedback(' + overrideId + ', \'unclear\')">不清楚</button>' +
+    status +
+  '</div>';
+}
+
+function submitOverrideFeedback(overrideId, feedbackType) {
+  fetch(API_BASE + '/api/student/overrides/' + encodeURIComponent(overrideId) + '/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ feedback_type: feedbackType })
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (!resp.success) {
+        alert(resp.error || '反馈提交失败');
+        return;
+      }
+      var target = document.getElementById('override-feedback-' + overrideId);
+      if (target) {
+        target.innerHTML = buildFeedbackHtml(overrideId, feedbackType).replace(/^<div[^>]*>|<\/div>$/g, '');
+      }
+      loadOverrideHistory();
+    }).catch(function() {
+      alert('反馈提交失败，请稍后重试');
+    });
+}
+
+function showOverrideNotification(override) {
+  override = normalizeOverridePayload(override);
+  latestNotificationOverride = override;
+  var notice = document.getElementById('overrideNotification');
+  document.getElementById('overrideNoticeTitle').textContent = '教师发来新的指导 · ' + getOverrideTypeLabel(override);
+  document.getElementById('overrideNoticeText').textContent = normalizeMathText(override.content || '请查看教师刚刚发送的干预提示。');
+  notice.classList.remove('hidden');
+  if (overrideNoticeTimer) clearTimeout(overrideNoticeTimer);
+  overrideNoticeTimer = setTimeout(dismissOverrideNotification, 12000);
+}
+
+function dismissOverrideNotification() {
+  var notice = document.getElementById('overrideNotification');
+  if (notice) notice.classList.add('hidden');
+  if (overrideNoticeTimer) clearTimeout(overrideNoticeTimer);
+}
+
+function snoozeOverrideNotification() {
+  dismissOverrideNotification();
+  if (latestNotificationOverride) {
+    setTimeout(function() { showOverrideNotification(latestNotificationOverride); }, 5 * 60 * 1000);
+  }
+}
+
+function scrollToOverrideCard(overrideId) {
+  if (!overrideId) return;
+  var target = document.getElementById('override-card-' + overrideId);
+  if (!target) {
+    loadChatHistory();
+    setTimeout(function() { scrollToOverrideCard(overrideId); }, 700);
+    return;
+  }
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  dismissOverrideNotification();
 }
 
 function formatMessageTime(timeValue) {
@@ -904,6 +1269,20 @@ function formatMessageTime(timeValue) {
     now = new Date();
   }
   return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+
+function formatFullTime(timeValue) {
+  var value = timeValue;
+  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
+    value += 'Z';
+  }
+  var d = value ? new Date(value) : new Date();
+  if (Number.isNaN(d.getTime())) d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0');
 }
 
 function loadChatHistory() {
@@ -921,7 +1300,7 @@ function loadChatHistory() {
         return;
       }
       (data.messages || []).forEach(function(msg) {
-        var key = [msg.agent, msg.type, msg.time, msg.content].join('|');
+        var key = msg.override_id ? 'teacher-override-' + msg.override_id : [msg.agent, msg.type, msg.time, msg.content].join('|');
         if (renderedMessageKeys[key]) return;
         if (msg.type === 'user' && consumePendingUserMessage(msg.content, msg.time)) {
           renderedMessageKeys[key] = true;
@@ -930,7 +1309,13 @@ function loadChatHistory() {
         if (msg.type === 'user') {
           addChatMessage('user', msg.content, msg.time, key);
         } else if (msg.type === 'teacher') {
-          addTeacherMessage(msg.content, msg.agent, msg.time, key);
+          addTeacherMessage(msg.content, msg.agent, msg.time, key, {
+            id: msg.override_id,
+            override_id: msg.override_id,
+            teacher_id: msg.agent,
+            question_id: questionForRequest,
+            created_at: msg.time
+          });
         } else if (msg.type === 'assistant') {
           currentAgent = msg.agent || currentAgent;
           addChatMessage('guide', msg.content, msg.time, key);
@@ -976,9 +1361,62 @@ function clearCurrentChat() {
     });
 }
 
+function loadOverrideHistory(silent) {
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/overrides?limit=30', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      renderOverrideHistory(data.overrides || []);
+      if (silent) {
+        lastOverrideId = data.latest_override_id || lastOverrideId;
+      }
+    }).catch(function() {});
+}
+
+function pollOverrides() {
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/overrides?last_override_id=' + encodeURIComponent(lastOverrideId) + '&limit=30', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      renderOverrideHistory(data.overrides || []);
+      var newItems = data.new_overrides || [];
+      if (newItems.length > 0) {
+        var latest = normalizeOverridePayload(newItems[newItems.length - 1]);
+        showOverrideNotification(latest);
+        lastOverrideId = data.latest_override_id || latest.id || lastOverrideId;
+        loadChatHistory();
+      } else {
+        lastOverrideId = data.latest_override_id || lastOverrideId;
+      }
+    }).catch(function() {});
+}
+
+function renderOverrideHistory(overrides) {
+  var count = document.getElementById('overrideHistoryCount');
+  var list = document.getElementById('overrideHistoryList');
+  if (!count || !list) return;
+  count.textContent = overrides.length + ' 条';
+  if (!overrides.length) {
+    list.innerHTML = '<div class="override-history-item"><div class="override-history-item-text">暂无教师指导</div></div>';
+    return;
+  }
+  list.innerHTML = overrides.map(function(item) {
+    var override = normalizeOverridePayload(item);
+    var id = Number(override.id || 0);
+    return '<div class="override-history-item" onclick="scrollToOverrideCard(' + id + ')">' +
+      '<div class="override-history-item-title">第 ' + escapeHtml(override.question_id || '-') + ' 题 · ' + escapeHtml(formatFullTime(override.created_at)) + '</div>' +
+      '<div class="override-history-item-text">' + escapeHtml(normalizeMathText(override.content || '教师指导')) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
 function startHistoryPolling() {
   if (historyTimer) clearInterval(historyTimer);
+  if (overrideTimer) clearInterval(overrideTimer);
   historyTimer = setInterval(loadChatHistory, 3000);
+  overrideTimer = setInterval(pollOverrides, 5000);
 }
 
 function escapeHtml(text) {
