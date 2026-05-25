@@ -909,10 +909,9 @@ function loadChatHistory() {
 
 function consumePendingUserMessage(content, timeValue) {
   if (!pendingUserMessages.length) return false;
-  var msgTime = timeValue ? new Date(timeValue).getTime() : Date.now();
   for (var i = 0; i < pendingUserMessages.length; i++) {
     var pending = pendingUserMessages[i];
-    if (pending.content === content && msgTime >= pending.sentAt - 10000) {
+    if (pending.content === content) {
       pendingUserMessages.splice(i, 1);
       return true;
     }
