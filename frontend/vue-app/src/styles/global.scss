@@ -1,0 +1,72 @@
+@use './variables' as *;
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  color: $text-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.brand-page {
+  min-height: 100vh;
+  background: $brand-gradient;
+}
+
+.teacher-page,
+.admin-page {
+  min-height: 100vh;
+  background: $teacher-bg-gradient;
+}
+
+.brand-card {
+  background: white;
+  border-radius: $radius-card;
+  box-shadow: $shadow-card;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-glass;
+  padding: 25px;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

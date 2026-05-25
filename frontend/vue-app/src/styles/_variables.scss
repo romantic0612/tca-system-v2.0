@@ -1,0 +1,41 @@
+$brand-primary-1: #667eea;
+$brand-primary-2: #764ba2;
+$brand-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+$agent-guide-gradient: linear-gradient(135deg, #667eea, #764ba2);
+$agent-tutor-gradient: linear-gradient(135deg, #2E86AB, #4CAF50);
+$agent-evaluator-gradient: linear-gradient(135deg, #FF9800, #F44336);
+
+$accent-blue: #2E86AB;
+$accent-green: #4CAF50;
+$accent-red: #ff4d4f;
+$accent-orange: #FF9800;
+$btn-gradient: linear-gradient(135deg, $accent-blue 0%, $accent-green 100%);
+$user-bubble-gradient: linear-gradient(135deg, $accent-blue 0%, $accent-green 100%);
+$teacher-bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
+$chat-bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+$text-primary: #333333;
+$text-secondary: #666666;
+$text-muted: rgba(255, 255, 255, 0.6);
+$border-default: #E8E8E8;
+$border-focus: $accent-blue;
+
+$radius-card: 20px;
+$radius-input: 12px;
+$radius-button: 12px;
+$radius-glass: 15px;
+$radius-bubble: 18px;
+
+$shadow-card: 0 15px 50px rgba(0, 0, 0, 0.25);
+$shadow-teacher-card: 0 4px 15px rgba(0, 0, 0, 0.1);
+$shadow-btn: 0 4px 15px rgba(46, 134, 171, 0.3);
+$shadow-btn-hover: 0 6px 20px rgba(46, 134, 171, 0.4);
+$shadow-input-focus: 0 0 0 3px rgba(46, 134, 171, 0.1);
+
+$color-group-sa: #9E9E9E;
+$color-group-exp: #667eea;
+$color-group-ai-auto: #00BCD4;
+$color-group-tca: #764ba2;
+
+$transition-default: all 0.3s ease;

@@ -71,6 +71,69 @@ TCA-System 是一个面向 K-12 学习场景的“教师可控多智能体 AI �
 - WebSocket Toast 视觉系统还没完全组件化，目前是页面内局部通知和列表提醒。
 - SQLite 对原型和小规模演示可靠，若正式多人并发实验，建议后续按 V2.0 蓝图迁移 MySQL。
 
+### 0.2 V2.0 Vue3 + Element Plus 前端工程骨架
+
+根据视觉设计规范 v2.0 的 Vue3 + Vite + Pinia + TypeScript + Element Plus 目标，本轮新增了独立前端工程：
+
+- `frontend/vue-app/package.json`
+- `frontend/vue-app/vite.config.ts`
+- `frontend/vue-app/tsconfig.json`
+- `frontend/vue-app/src/main.ts`
+- `frontend/vue-app/src/router/index.ts`
+- `frontend/vue-app/src/stores/auth.ts`
+- `frontend/vue-app/src/api/http.ts`
+- `frontend/vue-app/src/styles/_variables.scss`
+- `frontend/vue-app/src/styles/global.scss`
+- `frontend/vue-app/src/styles/element-overrides.scss`
+- `frontend/vue-app/src/components/common/GradientButton.vue`
+- `frontend/vue-app/src/components/common/AgentBadge.vue`
+- `frontend/vue-app/src/components/common/GroupBadge.vue`
+- `frontend/vue-app/src/components/common/MessageBubble.vue`
+- `frontend/vue-app/src/components/common/WebSocketToast.vue`
+- `frontend/vue-app/src/views/LoginView.vue`
+- `frontend/vue-app/src/views/StudentView.vue`
+- `frontend/vue-app/src/views/TeacherView.vue`
+- `frontend/vue-app/src/views/AdminView.vue`
+
+设计规范已落地的部分：
+
+- 品牌渐变背景 `#667eea -> #764ba2`。
+- 按钮渐变 `#2E86AB -> #4CAF50`。
+- Guide/Tutor/Evaluator 三类 Agent Badge。
+- SA/EXP/AI-AUTO/TCA 四组 GroupBadge。
+- 用户/AI/系统/教师四类 MessageBubble。
+- WebSocketToast 滑入通知组件。
+- Element Plus 主题变量覆盖。
+- Vue Router 四个视图：登录、学生端、教师端、管理端。
+- Pinia 登录状态 Store。
+- Axios API Client，开发环境 `/api` 代理到 Flask 后端。
+
+当前策略：
+
+- `frontend/static` 仍是当前可部署演示版本，不删除、不替换。
+- `frontend/vue-app` 是 V2.0 前端重构入口，供后续前端同学继续实现真实数据绑定和交互。
+- Docker 仍默认运行 Flask + 静态 HTML，避免影响当前服务器演示。
+
+验证方式：
+
+```bash
+cd frontend/vue-app
+npm install
+npm run build
+```
+
+已验证：`npm run build` 通过。构建中出现的 chunk size warning 来自 Element Plus 打包体积，不影响运行，后续可通过路由懒加载和手动分包优化。
+
+更新后的完成度估计：
+
+| 模块 | 完成度 | 说明 |
+|:---|:---:|:---|
+| V1.5 技术栈路线 | 90% | Flask + SQLite + flask-socketio 演示主线保持稳定。 |
+| 四组实验条件 | 85% | 主逻辑已具备，AI-AUTO 回切已补。 |
+| TCA 教师 Override | 85% | 当前静态版已可演示完整闭环。 |
+| 视觉设计规范 v2.0 | 70% | 设计 token、Element Plus、Vue 组件骨架已落地；还需把真实业务交互从静态 HTML 迁移进 Vue。 |
+| V2.0 前端工程化 | 60% | Vue3 工程可构建，组件和视图骨架已完成；真实 API 绑定和页面细节仍需继续。 |
+
 ### 0. 最新补充：教师 Override 学生端三层显示闭环
 
 本轮按设计文档《TCA-System_设计方案_教师Override学生端显示》的要求，补齐了教师干预在学生端的显示、持久化、实时同步和反馈闭环。
