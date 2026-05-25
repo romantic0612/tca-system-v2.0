@@ -12,6 +12,70 @@ TCA-System 是一个面向 K-12 学习场景的“教师可控多智能体 AI �
 
 ## 本轮主要修改
 
+### 0. 最新补充：教师 Override 学生端三层显示闭环
+
+本轮按设计文档《TCA-System_设计方案_教师Override学生端显示》的要求，补齐了教师干预在学生端的显示、持久化、实时同步和反馈闭环。
+
+涉及文件：
+
+- `backend/api/student.py`
+- `backend/api/teacher.py`
+- `backend/core/database/schema.py`
+- `frontend/static/student.html`
+
+已实现：
+
+- 数据库层：
+  - `chat_messages` 新增 `override_id` 字段，用于把一条教师干预消息和 `teacher_overrides` 记录关联起来。
+  - `teacher_overrides` 新增 `feedback`、`feedback_at` 字段，用于记录学生对教师指导的反馈。
+  - `init_database()` 已加入兼容旧库的 `ALTER TABLE` 迁移逻辑，旧服务器数据库重启后也会自动补列。
+- 教师端发送干预：
+  - 教师点击发送干预后，会同时写入 `teacher_overrides` 和 `chat_messages`。
+  - 写入 `chat_messages` 时保存对应的 `override_id`。
+  - WebSocket 推送 `teacher_override` 时带上 `override_id`、`override_type`、`intervention_type`、`question_id`、`timestamp` 等信息。
+- 学生端新增接口：
+  - `GET /api/student/overrides`：获取当前学生收到的教师 Override 列表，并支持 `last_override_id` 拉取新消息。
+  - `POST /api/student/overrides/<override_id>/feedback`：学生提交“有帮助 / 不清楚”反馈，写回数据库。
+  - `GET /api/student/history` 返回聊天历史时，现在会带上 `override_id`，前端可用于去重和定位。
+- 学生端三层显示机制：
+  - 第一层：顶部通知条。收到新的教师 Override 后，学生端顶部出现“教师发来新的指导”，支持“查看 / 稍后 / 关闭”。
+  - 第二层：对话区教师 Override 卡片。卡片显示教师 Override 类型、切换目标或干预类型、完整日期时间、题号、教师编号、内容和反馈按钮。
+  - 第三层：右侧教师指导历史入口。显示历史指导数量，可展开查看历史指导摘要，并点击跳转到对应卡片。
+- 实时性与兜底：
+  - 在线时通过 WebSocket 立即收到教师干预。
+  - 同时保留 5 秒轮询 `/api/student/overrides` 作为兜底，避免 WebSocket 断线或错过消息。
+  - 通过 `override_id` 去重，避免同一条教师干预因 WebSocket 和历史回填重复显示。
+- 学生反馈：
+  - 学生可在教师 Override 卡片上点击“有帮助”或“不清楚”。
+  - 反馈会写入 `teacher_overrides.feedback` 和 `teacher_overrides.feedback_at`。
+
+如何体现已经实现：
+
+1. 启动系统后，用学生账号登录学生端，例如 `20240001 / 123456`。
+2. 另开教师端，用教师账号登录，例如 `100001 / teacher123`。
+3. 在教师端选择该学生，输入干预内容并发送。
+4. 学生端应立即出现顶部通知条。
+5. 点击“查看”后，学生端对话区应出现教师 Override 卡片。
+6. 学生端右侧“教师指导”历史入口数量增加。
+7. 点击卡片上的“有帮助 / 不清楚”，反馈按钮会变成选中状态。
+8. 刷新学生端后，教师干预仍能从聊天历史中恢复显示，说明不是临时前端状态。
+9. 可用接口验证：
+
+```bash
+curl -b cookie.txt "http://127.0.0.1:5000/api/student/overrides?limit=10"
+```
+
+验证命令：
+
+```bash
+python test_flask.py
+```
+
+额外已验证：
+
+- 学生页内联 JavaScript 语法检查通过。
+- 本地测试过“教师发送干预 -> 生成 override_id -> 学生查询 overrides -> 聊天历史带 override_id -> 学生反馈写库”的完整链路。
+
 ### 1. 智能规则主线
 
 新增或整理了后端智能规则层，核心文件是 `backend/core/intelligence.py`。
