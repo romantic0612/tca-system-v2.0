@@ -967,7 +967,7 @@ function renderDiagnosis(data, item) {
     lines.push('<div class="chat-line system">最近对话</div>');
     data.messages.forEach(function(m) {
       var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-      lines.push('<div class="chat-line">' + escapeHtml(who + ': ' + m.content) + '</div>');
+      lines.push('<div class="chat-line">' + escapeHtml(who + ': ' + normalizeMathText(m.content)) + '</div>');
     });
   } else {
     lines.push('<div class="chat-line system">该题暂无对话历史。</div>');
@@ -1089,7 +1089,7 @@ function loadStudentHistory(userId, questionId) {
       }
       body.innerHTML = data.messages.map(function(m) {
         var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-        return '<div class="chat-line">' + escapeHtml(who + ': ' + m.content) + '</div>';
+        return '<div class="chat-line">' + escapeHtml(who + ': ' + normalizeMathText(m.content)) + '</div>';
       }).join('');
     })
     .catch(function() {
@@ -1196,6 +1196,20 @@ function escapeHtml(text) {
   var d = document.createElement('div');
   d.appendChild(document.createTextNode(text != null ? String(text) : ''));
   return d.innerHTML;
+}
+
+function normalizeMathText(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/\\\(/g, '')
+    .replace(/\\\)/g, '')
+    .replace(/\\\[/g, '')
+    .replace(/\\\]/g, '')
+    .replace(/\$/g, '')
+    .replace(/\\angle\s*/g, '∠')
+    .replace(/\\circ/g, '°')
+    .replace(/\^\{?°\}?/g, '°')
+    .replace(/\\,/g, ' ');
 }
 
 function pendingItemKey(item) {

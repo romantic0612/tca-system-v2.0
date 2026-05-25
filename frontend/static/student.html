@@ -865,6 +865,7 @@ document.getElementById('answerInput').addEventListener('keydown', function(e) {
 function addChatMessage(type, content, timeValue, key) {
   if (key && renderedMessageKeys[key]) return;
   if (key) renderedMessageKeys[key] = true;
+  content = normalizeMathText(content);
   var chatArea = document.getElementById('chatArea');
   var div = document.createElement('div');
   div.className = 'chat-message' + (type === 'user' ? ' msg-user' : '');
@@ -883,6 +884,7 @@ function addChatMessage(type, content, timeValue, key) {
 function addTeacherMessage(content, teacherId, timeValue, key) {
   if (key && renderedMessageKeys[key]) return;
   if (key) renderedMessageKeys[key] = true;
+  content = normalizeMathText(content);
   var chatArea = document.getElementById('chatArea');
   var div = document.createElement('div');
   div.className = 'teacher-note-wrapper';
@@ -983,6 +985,20 @@ function escapeHtml(text) {
   var d = document.createElement('div');
   d.appendChild(document.createTextNode(text));
   return d.innerHTML;
+}
+
+function normalizeMathText(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/\\\(/g, '')
+    .replace(/\\\)/g, '')
+    .replace(/\\\[/g, '')
+    .replace(/\\\]/g, '')
+    .replace(/\$/g, '')
+    .replace(/\\angle\s*/g, '∠')
+    .replace(/\\circ/g, '°')
+    .replace(/\^\{?°\}?/g, '°')
+    .replace(/\\,/g, ' ');
 }
 
 // ====== 启动 ======
