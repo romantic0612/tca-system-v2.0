@@ -572,6 +572,7 @@ var wsClient = null;
 var currentAgent = 'Guide';
 var renderedMessageKeys = {};
 var historyTimer = null;
+var chatSending = false;
 var questions = {
   1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
   2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
@@ -779,12 +780,15 @@ function updateQuestionUI() {
 }
 
 // ====== 聊天功能 ======
-document.getElementById('chatSendBtn').addEventListener('click', function() {
+document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
+
+function sendChatMessage() {
+  if (chatSending) return;
   var msg = document.getElementById('chatInput').value.trim();
   if (!msg) return;
-  addChatMessage('user', msg);
+  chatSending = true;
+  document.getElementById('chatSendBtn').disabled = true;
   document.getElementById('chatInput').value = '';
-  // 发送消息到后端（预留API接口）
   var data = { student_id: userId, question_id: currentQuestion, message: msg };
   fetch(API_BASE + '/api/student/chat', {
     method: 'POST',
@@ -793,22 +797,19 @@ document.getElementById('chatSendBtn').addEventListener('click', function() {
     body: JSON.stringify(data)
   }).then(function(r) { return r.json(); })
     .then(function(resp) {
-      if (resp.success && resp.reply) {
+      if (resp.success) {
         currentAgent = resp.agent || currentAgent;
-        addChatMessage('guide', resp.reply, null, 'assistant-local-' + Date.now());
+        loadChatHistory();
+      } else {
+        addChatMessage('system', resp.error || '消息发送失败');
       }
     }).catch(function() {
-      // 后端API尚未实现时本地模拟回复
-      var replies = [
-        '让我们一步步分析这个问题。',
-        '你能先告诉我已知条件是什么吗？',
-        '想想看，三角形内角和是多少度？',
-        '不错，继续往这个方向思考。',
-      ];
-      var reply = replies[Math.floor(Math.random() * replies.length)];
-      addChatMessage('guide', reply);
+      addChatMessage('system', '消息发送失败，请稍后重试。');
+    }).finally(function() {
+      chatSending = false;
+      document.getElementById('chatSendBtn').disabled = false;
     });
-});
+}
 
 document.getElementById('chatInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
