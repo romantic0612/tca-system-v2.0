@@ -526,6 +526,36 @@ def get_history():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@student_bp.route('/history/clear', methods=['POST'])
+def clear_history():
+    """清空当前登录学生某一道题的聊天历史。"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': '未登录'}), 401
+    if session.get('role') != 'student':
+        return jsonify({'success': False, 'error': '仅限学生使用'}), 403
+
+    try:
+        data = request.get_json(silent=True) or {}
+        question_id = data.get('question_id')
+        if question_id is None:
+            return jsonify({'success': False, 'error': '缺少 question_id'}), 400
+
+        student_id = session['user_id']
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'DELETE FROM chat_messages WHERE student_id = ? AND question_id = ?',
+            (student_id, question_id)
+        )
+        deleted = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'deleted': deleted})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @student_bp.route('/info', methods=['GET'])
 def get_info():
     """获取学生个人信息"""
