@@ -573,6 +573,7 @@ var currentAgent = 'Guide';
 var renderedMessageKeys = {};
 var historyTimer = null;
 var chatSending = false;
+var pendingUserMessages = [];
 var questions = {
   1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
   2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
@@ -789,6 +790,11 @@ function sendChatMessage() {
   chatSending = true;
   document.getElementById('chatSendBtn').disabled = true;
   document.getElementById('chatInput').value = '';
+  pendingUserMessages.push({
+    content: msg,
+    sentAt: Date.now()
+  });
+  addChatMessage('user', msg, null, 'local-user-' + Date.now());
   var data = { student_id: userId, question_id: currentQuestion, message: msg };
   fetch(API_BASE + '/api/student/chat', {
     method: 'POST',
@@ -866,6 +872,10 @@ function loadChatHistory() {
       (data.messages || []).forEach(function(msg) {
         var key = [msg.agent, msg.type, msg.time, msg.content].join('|');
         if (renderedMessageKeys[key]) return;
+        if (msg.type === 'user' && consumePendingUserMessage(msg.content, msg.time)) {
+          renderedMessageKeys[key] = true;
+          return;
+        }
         if (msg.type === 'user') {
           addChatMessage('user', msg.content, msg.time, key);
         } else if (msg.type === 'teacher') {
@@ -879,6 +889,19 @@ function loadChatHistory() {
       });
     })
     .catch(function() {});
+}
+
+function consumePendingUserMessage(content, timeValue) {
+  if (!pendingUserMessages.length) return false;
+  var msgTime = timeValue ? new Date(timeValue).getTime() : Date.now();
+  for (var i = 0; i < pendingUserMessages.length; i++) {
+    var pending = pendingUserMessages[i];
+    if (pending.content === content && msgTime >= pending.sentAt - 10000) {
+      pendingUserMessages.splice(i, 1);
+      return true;
+    }
+  }
+  return false;
 }
 
 function startHistoryPolling() {
