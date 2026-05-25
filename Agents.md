@@ -1,21 +1,21 @@
 # TCA-System V2.0 项目说明
 
-## 最新部署策略：云端优先运行 Vue3 版本
+## 最新部署策略：云端默认运行产品演示版
 
-现在项目已经按“Vue3 + Element Plus + 组件化”的 V2.0 方向调整部署方式：
+当前项目按“产品先可用”的策略调整部署方式：
 
-- 云服务器 Docker 构建时会自动构建 `frontend/vue-app`。
-- Flask 后端启动后会优先服务 `frontend/vue-app/dist/index.html`。
-- Vue Router 的 `/login`、`/student`、`/teacher`、`/admin` 路由由 Flask fallback 到 `index.html` 支持。
-- 如果本地没有 Vue 构建产物，Flask 才会回退到旧的 `frontend/static` 页面，作为开发兜底。
+- 云服务器 Docker 默认运行 `frontend/static`，这是目前已接入后端 API 的学生端、教师端、管理端。
+- Flask 后端启动后会托管 `frontend/static`，并将 `/login`、`/student`、`/teacher`、`/admin` 映射到对应 `.html` 页面。
+- `frontend/vue-app` 保留为 Vue3 + Element Plus + 组件化的 V2.0 重构工程，但当前不作为云端默认入口，避免线上展示未接真实接口的骨架页面。
+- 如需测试 Vue 重构版，可在 `.env` 设置 `TCA_FRONTEND_MODE=vue`，并先构建 `frontend/vue-app/dist`。
 - 后续本地改代码后，推到 GitHub；服务器只需要 `git pull` + `docker compose up -d --build`。
 
 相关改动文件：
 
-- `Dockerfile`：改为多阶段构建，第一阶段 Node 构建 Vue，第二阶段 Python 运行 Flask。
-- `backend/app.py`：静态文件服务改为优先 Vue dist，并支持 Vue Router history fallback。
+- `Dockerfile`：改回 Python 产品镜像，默认 `TCA_FRONTEND_MODE=static`。
+- `backend/app.py`：静态文件服务改为默认 `frontend/static`，并支持 `/student` 等短路径映射。
 - `.dockerignore`：排除 `frontend/vue-app/node_modules/` 和 `frontend/vue-app/dist/`。
-- `frontend/vue-app/`：V2.0 前端工程入口。
+- `frontend/vue-app/`：V2.0 前端重构工程入口，暂不作为正式演示入口。
 
 服务器更新命令：
 
@@ -39,8 +39,8 @@ http://服务器IP:8501/admin
 
 注意：
 
-- 现在云端主入口不再是 `/login.html`，而是 `/login` 或 `/`。
-- 旧静态页面还保留在 `frontend/static`，但 Docker 云端会优先跑 Vue。
+- 现在云端主入口可以使用 `/login` 或 `/`，也兼容 `/login.html`。
+- Docker 云端默认跑 `frontend/static` 产品页；Vue 重构完成前不要切换线上默认入口。
 - `.env` 仍然只放服务器，不上传 GitHub。
 
 ## 项目简介

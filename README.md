@@ -89,6 +89,7 @@ HOST_PORT=8501
 HOST=0.0.0.0
 PORT=5000
 DEBUG=false
+TCA_FRONTEND_MODE=static
 SECRET_KEY=replace-with-random-secret
 DATABASE_PATH=/app/data/tca_system.db
 ECNU_LLM_ENABLED=true
@@ -117,9 +118,9 @@ python test_flask.py
 
 完整服务器步骤见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
-## Vue 云端部署
+## 云端产品入口
 
-当前 Docker 已改为优先构建并服务 `frontend/vue-app`。
+当前 Docker 默认服务 `frontend/static`，这是目前已接后端 API 的产品演示版本。`frontend/vue-app` 保留为 V2.0 重构工程，等学生端、教师端、管理端全部完成真实数据绑定后再切为云端默认入口。
 
 服务器同步代码并部署：
 
@@ -131,10 +132,10 @@ docker compose up -d --build
 
 构建流程：
 
-1. Node 阶段执行 `npm ci` 和 `npm run build`，生成 Vue dist。
-2. Python 阶段运行 Flask + Socket.IO。
-3. Flask 优先服务 `frontend/vue-app/dist/index.html`。
-4. 本地没有 Vue dist 时，才回退到 `frontend/static`。
+1. Python 镜像安装 Flask、Socket.IO 等后端依赖。
+2. Flask + Socket.IO 服务 API。
+3. Flask 默认托管 `frontend/static` 中的登录、学生端、教师端、管理端。
+4. 如需测试 Vue 重构版，可在 `.env` 中显式设置 `TCA_FRONTEND_MODE=vue` 并自行构建 Vue dist。
 
 访问地址：
 

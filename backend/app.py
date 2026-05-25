@@ -24,11 +24,24 @@ STATIC_DIR = os.path.join(ROOT_DIR, 'frontend', 'static')
 
 
 def get_frontend_dir():
-    """Prefer the Vue build output; fall back to legacy static pages for dev."""
-    vue_index = os.path.join(VUE_DIST_DIR, 'index.html')
-    if os.path.exists(vue_index):
-        return VUE_DIST_DIR
+    """Choose the product frontend.
+
+    The static frontend is currently the functional product UI. The Vue app is
+    kept as the V2.0 refactor workspace and can be enabled explicitly when it
+    has feature parity.
+    """
+    frontend_mode = os.getenv('TCA_FRONTEND_MODE', 'static').strip().lower()
+    if frontend_mode == 'vue':
+        vue_index = os.path.join(VUE_DIST_DIR, 'index.html')
+        if os.path.exists(vue_index):
+            return VUE_DIST_DIR
+        print('[WARN] TCA_FRONTEND_MODE=vue but Vue dist is missing; fallback to static frontend.')
     return STATIC_DIR
+
+
+def is_vue_frontend(frontend_dir):
+    vue_index = os.path.join(VUE_DIST_DIR, 'index.html')
+    return os.path.abspath(frontend_dir) == os.path.abspath(VUE_DIST_DIR) and os.path.exists(vue_index)
 
 
 def serve_frontend_file(frontend_dir, filename):
@@ -39,12 +52,21 @@ def serve_frontend_file(frontend_dir, filename):
     if os.path.exists(target_path) and os.path.isfile(target_path):
         return send_from_directory(frontend_dir, filename)
 
-    # Vue Router uses history mode, so page routes need to return index.html.
-    vue_index = os.path.join(frontend_dir, 'index.html')
-    if os.path.exists(vue_index):
+    if not is_vue_frontend(frontend_dir):
+        route_map = {
+            'login': 'login.html',
+            'student': 'student.html',
+            'teacher': 'teacher.html',
+            'admin': 'admin.html',
+        }
+        if filename in route_map:
+            return send_from_directory(frontend_dir, route_map[filename])
+        abort(404)
+
+    if os.path.exists(os.path.join(frontend_dir, 'index.html')):
         return send_from_directory(frontend_dir, 'index.html')
 
-    return send_from_directory(frontend_dir, filename)
+    abort(404)
 
 def create_app():
     frontend_dir = get_frontend_dir()
@@ -74,7 +96,7 @@ def create_app():
     
     @app.route('/')
     def index():
-        if os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        if is_vue_frontend(app.static_folder):
             return send_from_directory(app.static_folder, 'index.html')
         return send_from_directory(app.static_folder, 'login.html')
     

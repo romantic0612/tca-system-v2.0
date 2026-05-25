@@ -2,11 +2,13 @@
 
 ## 当前云端入口
 
-当前 Docker 构建会优先运行 Vue3 版本：
+当前 Docker 默认运行已经接入后端的产品演示版 `frontend/static`：
 
-- 构建阶段：`frontend/vue-app` -> `frontend/vue-app/dist`
-- 运行阶段：Flask + Socket.IO 服务 API，并托管 Vue dist
+- 构建阶段：Python 镜像安装后端依赖
+- 运行阶段：Flask + Socket.IO 服务 API，并托管 `frontend/static`
 - 访问入口：`/`、`/login`、`/student`、`/teacher`、`/admin`
+
+说明：`frontend/vue-app` 保留为 V2.0 重构工程，目前不作为云端默认入口，避免展示未接真实接口的骨架页面。
 
 服务器更新：
 
