@@ -1,198 +1,427 @@
 # -*- coding: utf-8 -*-
 """
-TCA-System V2.0 数据库Schema
-===========================
+Database schema and connection helpers for TCA-System.
 
-使用SQLite存储用户和会话数据
-账号使用INTEGER类型（学号8位、工号6位）
+SQLite remains the default for local tests. Production Docker deployments can
+switch to MySQL by setting DB_TYPE=mysql in .env.
 """
 
-import sqlite3
 import os
+import re
+import sqlite3
+import time
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent.parent / 'data' / 'tca_system.db'
+DB_PATH = Path(os.getenv(
+    'DATABASE_PATH',
+    Path(__file__).parent.parent.parent.parent / 'data' / 'tca_system.db',
+))
+
+
+def is_mysql_enabled():
+    return os.getenv('DB_TYPE', 'sqlite').lower() in ['mysql', 'mariadb']
+
+
+class DbRow:
+    """Small row object that supports both row['name'] and row[0]."""
+
+    def __init__(self, data, columns):
+        self._data = dict(data or {})
+        self._columns = list(columns or self._data.keys())
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._data.get(self._columns[key])
+        return self._data.get(key)
+
+    def __iter__(self):
+        return iter(self._data.items())
+
+    def __len__(self):
+        return len(self._data)
+
+    def keys(self):
+        return self._data.keys()
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+
+class MySQLCursor:
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self._columns = []
+
+    @property
+    def lastrowid(self):
+        return self._cursor.lastrowid
+
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+    def execute(self, sql, params=None):
+        sql = self._translate_sql(sql)
+        result = self._cursor.execute(sql, params or ())
+        self._columns = [col[0] for col in (self._cursor.description or [])]
+        return result
+
+    def fetchone(self):
+        row = self._cursor.fetchone()
+        return DbRow(row, self._columns) if row is not None else None
+
+    def fetchall(self):
+        return [DbRow(row, self._columns) for row in self._cursor.fetchall()]
+
+    def close(self):
+        return self._cursor.close()
+
+    @staticmethod
+    def _translate_sql(sql):
+        translated = sql.replace('INSERT OR IGNORE', 'INSERT IGNORE')
+        translated = re.sub(
+            r"'([^']*)' \|\| COALESCE\(content, ''\) AS detail",
+            r"CONCAT('\1', COALESCE(content, '')) AS detail",
+            translated,
+        )
+        translated = re.sub(
+            r"COALESCE\(from_agent, '-'\) \|\| ' -> ' \|\| COALESCE\(to_agent, '-'\) \|\|\s*"
+            r"' \(' \|\| COALESCE\(triggered_by, '-'\) \|\| '\)' AS detail",
+            "CONCAT(COALESCE(from_agent, '-'), ' -> ', COALESCE(to_agent, '-'), "
+            "' (', COALESCE(triggered_by, '-'), ')') AS detail",
+            translated,
+        )
+        translated = translated.replace('?', '%s')
+        return translated
+
+
+class MySQLConnection:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        return MySQLCursor(self._conn.cursor())
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+
+def _get_mysql_connection():
+    import pymysql
+
+    last_error = None
+    for _ in range(30):
+        try:
+            conn = pymysql.connect(
+                host=os.getenv('MYSQL_HOST', 'mysql'),
+                port=int(os.getenv('MYSQL_PORT', '3306')),
+                user=os.getenv('MYSQL_USER', 'tca_user'),
+                password=os.getenv('MYSQL_PASSWORD', 'tca_password'),
+                database=os.getenv('MYSQL_DATABASE', 'tca_system'),
+                charset='utf8mb4',
+                cursorclass=pymysql.cursors.DictCursor,
+                autocommit=False,
+            )
+            return MySQLConnection(conn)
+        except Exception as exc:
+            last_error = exc
+            time.sleep(1)
+    raise last_error
+
 
 def get_connection():
+    if is_mysql_enabled():
+        return _get_mysql_connection()
+
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn
 
+
+SQLITE_SCHEMA = [
+    '''
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin_exp', 'admin_sys')),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_assignments (
+        student_id INTEGER PRIMARY KEY,
+        student_name TEXT,
+        class_id TEXT,
+        pretest_score REAL,
+        experiment_group TEXT CHECK(experiment_group IN ('SA', 'EXP', 'AI-AUTO', 'TCA')),
+        current_question INTEGER DEFAULT 1,
+        total_questions INTEGER DEFAULT 10,
+        FOREIGN KEY (student_id) REFERENCES users(user_id)
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS teacher_overrides (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        teacher_id INTEGER NOT NULL,
+        override_type TEXT,
+        content TEXT,
+        question_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'active'
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        agent_name TEXT NOT NULL,
+        message_type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        question_id INTEGER,
+        override_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_progress (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        question_id INTEGER NOT NULL,
+        answer TEXT,
+        is_correct INTEGER,
+        time_spent INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_states (
+        student_id INTEGER PRIMARY KEY,
+        current_agent TEXT DEFAULT 'Guide',
+        error_streak REAL DEFAULT 0,
+        last_error_type TEXT,
+        consecutive_correct INTEGER DEFAULT 0,
+        last_response_time TEXT,
+        last_trigger_level TEXT,
+        total_interactions INTEGER DEFAULT 0,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS trigger_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        trigger_level TEXT,
+        error_type TEXT,
+        error_streak_value REAL,
+        stagnation_seconds INTEGER,
+        detected_keywords TEXT,
+        trigger_strength TEXT,
+        diagnosis_result TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS evaluation_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        question_id INTEGER NOT NULL,
+        student_answer TEXT,
+        standard_answer TEXT,
+        is_correct INTEGER,
+        error_type TEXT,
+        score REAL,
+        confidence TEXT,
+        key_mistake TEXT,
+        suggestion TEXT,
+        evaluated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    )
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS agent_switches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        from_agent TEXT,
+        to_agent TEXT,
+        switch_reason TEXT,
+        triggered_by TEXT,
+        trigger_event_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id),
+        FOREIGN KEY (trigger_event_id) REFERENCES trigger_events(id)
+    )
+    ''',
+]
+
+MYSQL_SCHEMA = [
+    '''
+    CREATE TABLE IF NOT EXISTS users (
+        user_id BIGINT PRIMARY KEY,
+        password_hash VARCHAR(128) NOT NULL,
+        role VARCHAR(32) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_assignments (
+        student_id BIGINT PRIMARY KEY,
+        student_name VARCHAR(128),
+        class_id VARCHAR(128),
+        pretest_score DOUBLE,
+        experiment_group VARCHAR(32),
+        current_question INT DEFAULT 1,
+        total_questions INT DEFAULT 10,
+        FOREIGN KEY (student_id) REFERENCES users(user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS teacher_overrides (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        teacher_id BIGINT NOT NULL,
+        override_type VARCHAR(64),
+        content TEXT,
+        question_id INT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status VARCHAR(32) DEFAULT 'active'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        agent_name VARCHAR(128) NOT NULL,
+        message_type VARCHAR(64) NOT NULL,
+        content TEXT NOT NULL,
+        question_id INT,
+        override_id BIGINT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_progress (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        question_id INT NOT NULL,
+        answer TEXT,
+        is_correct INT,
+        time_spent INT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS student_states (
+        student_id BIGINT PRIMARY KEY,
+        current_agent VARCHAR(64) DEFAULT 'Guide',
+        error_streak DOUBLE DEFAULT 0,
+        last_error_type VARCHAR(64),
+        consecutive_correct INT DEFAULT 0,
+        last_response_time DATETIME NULL,
+        last_trigger_level VARCHAR(64),
+        total_interactions INT DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS trigger_events (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        trigger_level VARCHAR(64),
+        error_type VARCHAR(64),
+        error_streak_value DOUBLE,
+        stagnation_seconds INT,
+        detected_keywords TEXT,
+        trigger_strength VARCHAR(64),
+        diagnosis_result TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS evaluation_records (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        question_id INT NOT NULL,
+        student_answer TEXT,
+        standard_answer TEXT,
+        is_correct INT,
+        error_type VARCHAR(64),
+        score DOUBLE,
+        confidence VARCHAR(64),
+        key_mistake TEXT,
+        suggestion TEXT,
+        evaluated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+    '''
+    CREATE TABLE IF NOT EXISTS agent_switches (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        student_id BIGINT NOT NULL,
+        from_agent VARCHAR(64),
+        to_agent VARCHAR(64),
+        switch_reason TEXT,
+        triggered_by VARCHAR(64),
+        trigger_event_id BIGINT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES student_assignments(student_id),
+        FOREIGN KEY (trigger_event_id) REFERENCES trigger_events(id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ''',
+]
+
+INDEXES = [
+    'CREATE INDEX idx_trigger_events_student ON trigger_events(student_id)',
+    'CREATE INDEX idx_trigger_events_time ON trigger_events(created_at)',
+    'CREATE INDEX idx_eval_records_student ON evaluation_records(student_id)',
+    'CREATE INDEX idx_eval_records_question ON evaluation_records(question_id)',
+    'CREATE INDEX idx_agent_switches_student ON agent_switches(student_id)',
+]
+
+EXTRA_COLUMNS = [
+    ('teacher_overrides', 'intervention_type', 'TEXT'),
+    ('teacher_overrides', 'diagnosis_context', 'TEXT'),
+    ('teacher_overrides', 'trigger_event_id', 'INTEGER'),
+    ('teacher_overrides', 'feedback', 'TEXT'),
+    ('teacher_overrides', 'feedback_at', 'TEXT'),
+    ('chat_messages', 'override_id', 'INTEGER'),
+    ('student_assignments', 'pretest_score', 'REAL'),
+]
+
+
 def init_database():
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin_exp', 'admin_sys')),
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_assignments (
-            student_id INTEGER PRIMARY KEY,
-            student_name TEXT,
-            class_id TEXT,
-            pretest_score REAL,
-            experiment_group TEXT CHECK(experiment_group IN ('SA', 'EXP', 'AI-AUTO', 'TCA')),
-            current_question INTEGER DEFAULT 1,
-            total_questions INTEGER DEFAULT 10,
-            FOREIGN KEY (student_id) REFERENCES users(user_id)
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS teacher_overrides (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            teacher_id INTEGER NOT NULL,
-            override_type TEXT,
-            content TEXT,
-            question_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'active'
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS chat_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            agent_name TEXT NOT NULL,
-            message_type TEXT NOT NULL,
-            content TEXT NOT NULL,
-            question_id INTEGER,
-            override_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_progress (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            question_id INTEGER NOT NULL,
-            answer TEXT,
-            is_correct INTEGER,
-            time_spent INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS student_states (
-            student_id INTEGER PRIMARY KEY,
-            current_agent TEXT DEFAULT 'Guide',
-            error_streak REAL DEFAULT 0,
-            last_error_type TEXT,
-            consecutive_correct INTEGER DEFAULT 0,
-            last_response_time TEXT,
-            last_trigger_level TEXT,
-            total_interactions INTEGER DEFAULT 0,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trigger_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            trigger_level TEXT,
-            error_type TEXT,
-            error_streak_value REAL,
-            stagnation_seconds INTEGER,
-            detected_keywords TEXT,
-            trigger_strength TEXT,
-            diagnosis_result TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
-        )
-    ''')
-    
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_trigger_events_student ON trigger_events(student_id)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_trigger_events_time ON trigger_events(created_at)')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS evaluation_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            question_id INTEGER NOT NULL,
-            student_answer TEXT,
-            standard_answer TEXT,
-            is_correct INTEGER,
-            error_type TEXT,
-            score REAL,
-            confidence TEXT,
-            key_mistake TEXT,
-            suggestion TEXT,
-            evaluated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (student_id) REFERENCES student_assignments(student_id)
-        )
-    ''')
-    
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_eval_records_student ON evaluation_records(student_id)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_eval_records_question ON evaluation_records(question_id)')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS agent_switches (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            from_agent TEXT,
-            to_agent TEXT,
-            switch_reason TEXT,
-            triggered_by TEXT,
-            trigger_event_id INTEGER,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (student_id) REFERENCES student_assignments(student_id),
-            FOREIGN KEY (trigger_event_id) REFERENCES trigger_events(id)
-        )
-    ''')
-    
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_agent_switches_student ON agent_switches(student_id)')
-    
-    try:
-        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN intervention_type TEXT')
-    except:
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN diagnosis_context TEXT')
-    except:
-        pass
-    
-    try:
-        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN trigger_event_id INTEGER')
-    except:
-        pass
 
-    try:
-        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN feedback TEXT')
-    except:
-        pass
+    for statement in MYSQL_SCHEMA if is_mysql_enabled() else SQLITE_SCHEMA:
+        cursor.execute(statement)
 
-    try:
-        cursor.execute('ALTER TABLE teacher_overrides ADD COLUMN feedback_at TEXT')
-    except:
-        pass
+    for statement in INDEXES:
+        try:
+            cursor.execute(statement)
+        except Exception:
+            pass
 
-    try:
-        cursor.execute('ALTER TABLE chat_messages ADD COLUMN override_id INTEGER')
-    except:
-        pass
-    
+    for table, column, column_type in EXTRA_COLUMNS:
+        try:
+            cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
+        except Exception:
+            pass
+
     conn.commit()
-
-    try:
-        cursor.execute('ALTER TABLE student_assignments ADD COLUMN pretest_score REAL')
-    except:
-        pass
-
     conn.close()
+
 
 def create_default_accounts():
     """Create only the minimal accounts needed to enter the system."""
@@ -253,7 +482,8 @@ def create_test_users():
     conn.commit()
     conn.close()
 
+
 if __name__ == '__main__':
     init_database()
     create_default_accounts()
-    print("数据库初始化完成")
+    print('Database initialized')

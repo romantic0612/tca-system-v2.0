@@ -1,11 +1,34 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: tca-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-tca_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tca_system}
+      MYSQL_USER: ${MYSQL_USER:-tca_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tca_password}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+
   tca-system:
     build: .
     container_name: tca-system
     restart: unless-stopped
+    depends_on:
+      - mysql
     env_file:
       - .env
     ports:
       - "${HOST_PORT:-8501}:5000"
     volumes:
       - ./data:/app/data
+
+volumes:
+  mysql_data:
