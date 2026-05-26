@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TCA-System 登录</title>
+<title>智融 · 登录</title>
 <style>
   :root {
     --color-background-primary: #ffffff;
@@ -32,206 +32,295 @@
     --border-radius-lg: 20px;
     --border-radius-md: 12px;
     --border-radius-sm: 8px;
+    --border-radius-xl: 24px;
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: var(--gradient-brand);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     font-family: var(--font-sans);
+    min-height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    padding: 20px;
+    padding: 30px 20px;
   }
-  .container {
-    max-width: 420px;
-    width: 100%;
-  }
-  .card {
-    background: var(--color-background-primary);
-    border-radius: var(--border-radius-lg);
-    border: 0.5px solid var(--color-border-tertiary);
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    box-shadow: var(--shadow-card);
-  }
-  .header {
-    background: transparent;
-    padding: 40px 40px 16px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+  /* ===== 标题区域：直接显示在渐变背景上 ===== */
+  .header-section {
     text-align: center;
+    margin-bottom: 32px;
   }
-  .header h1 {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 6px;
-    color: #111827;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-  }
-  .header p {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-  }
-  .login-body {
-    padding: 24px 40px;
-  }
-  .login-card {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-lg);
-    padding: 28px 24px;
-    max-width: 340px;
-    margin: 0 auto;
-  }
-  .login-card h2 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    text-align: center;
-    color: #333;
-  }
-  .form-group {
-    margin-bottom: 16px;
-  }
-  .form-group label {
-    font-size: 15px;
-    font-weight: 600;
-    color: #333;
+  .header-section .title-icon {
+    font-size: 48px;
     display: block;
     margin-bottom: 8px;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
   }
-  .form-group input {
+  .header-section h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #ffffff;
+    text-shadow: 2px 3px 6px rgba(0,0,0,0.30);
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+  .header-section .subtitle {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.90);
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.20);
+    letter-spacing: 2px;
+  }
+
+  /* ===== 登录表单卡片 ===== */
+  .login-card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-xl);
+    padding: 36px 32px 28px;
     width: 100%;
-    border: 2px solid #E8E8E8;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+    backdrop-filter: blur(4px);
+  }
+  .login-card .form-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 24px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .login-card .form-title .title-icon-small {
+    font-size: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-wrapper input {
+    width: 100%;
+    background: #f0f2f8;
+    border: 2px solid transparent;
     border-radius: var(--border-radius-md);
     padding: 14px 16px;
-    font-size: 16px;
+    font-size: 15px;
     outline: none;
     transition: all 0.3s ease;
-    box-sizing: border-box;
     font-family: var(--font-sans);
   }
-  .form-group input:focus {
+  .input-wrapper input:focus {
+    background: #ffffff;
     border-color: #2E86AB;
-    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.12);
   }
+  .input-wrapper input::placeholder {
+    color: #b0b8c8;
+  }
+  /* 密码眼睛图标 */
+  .toggle-pwd {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 20px;
+    color: #999;
+    user-select: none;
+    transition: color 0.2s;
+    line-height: 1;
+    background: none;
+    border: none;
+    padding: 4px;
+  }
+  .toggle-pwd:hover {
+    color: #2E86AB;
+  }
+
+  .error-msg {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    display: none;
+    text-align: center;
+  }
+
   .btn-login {
     width: 100%;
-    padding: 14px 40px;
+    padding: 14px 20px;
     background: var(--gradient-btn);
     color: white;
     border: none;
     border-radius: var(--border-radius-md);
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: var(--shadow-btn);
+    box-shadow: 0 6px 20px rgba(46,134,171,0.35);
     transition: all 0.3s ease;
     font-family: var(--font-sans);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
   .btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-btn-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(46,134,171,0.45);
   }
   .btn-login:active {
     transform: translateY(0);
   }
+  .btn-login .btn-icon {
+    font-size: 18px;
+  }
+
+  /* ===== 快捷登录 ===== */
   .accounts {
-    padding: 0 40px 24px;
+    margin-top: 28px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .accounts-label {
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.60);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
   }
   .account-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-lg);
+    gap: 10px;
     padding: 14px 12px;
     background: rgba(255,255,255,0.12);
     backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid rgba(255,255,255,0.15);
   }
   .account-item {
     text-align: center;
-    padding: 10px 6px;
+    padding: 12px 6px;
     border-radius: var(--border-radius-md);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.25s ease;
+    background: rgba(255,255,255,0.10);
   }
   .account-item:hover {
-    background: var(--color-background-secondary);
+    background: rgba(255,255,255,0.22);
+    transform: translateY(-2px);
   }
-  .account-item.student { background: var(--color-c-blue-50); }
-  .account-item.teacher { background: var(--color-c-teal-50); }
-  .account-item.admin { background: var(--color-c-gray-50); }
+  .account-item.student { background: rgba(46,134,171,0.20); }
+  .account-item.teacher { background: rgba(46,134,171,0.20); }
+  .account-item.admin { background: rgba(118,75,162,0.25); }
+  .account-item.student:hover { background: rgba(46,134,171,0.35); }
+  .account-item.teacher:hover { background: rgba(46,134,171,0.35); }
+  .account-item.admin:hover { background: rgba(118,75,162,0.40); }
   .account-icon {
-    font-size: 22px;
+    font-size: 24px;
     margin-bottom: 4px;
   }
   .account-label {
     font-size: 12px;
-    font-weight: 500;
-    color: var(--color-c-gray-800);
+    font-weight: 600;
+    color: rgba(255,255,255,0.90);
   }
   .account-username {
     font-size: 11px;
-    color: var(--color-text-tertiary);
+    color: rgba(255,255,255,0.55);
   }
+
   .footer {
-    padding: 12px 32px;
-    border-top: 0.5px solid var(--color-border-tertiary);
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-    text-align: center;
-  }
-  .error-msg {
-    color: #dc2626;
+    margin-top: 24px;
     font-size: 12px;
-    margin-top: 4px;
-    display: none;
+    color: rgba(255,255,255,0.50);
+    text-align: center;
+    letter-spacing: 1px;
   }
 </style>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/js/websocket.js"></script>
 </head>
 <body>
-<div class="container">
-  <div class="card">
-    <div class="header">
-      <h1>TCA-System</h1>
-      <p>面向K-12的教师可控多智能体AI辅导系统</p>
+
+  <!-- ===== 标题区域（直接显示在紫色渐变背景上） ===== -->
+  <div class="header-section">
+    <span class="title-icon">🎓</span>
+    <h1>智融</h1>
+    <p class="subtitle">教师可控自适应学习系统</p>
+  </div>
+
+  <!-- ===== 登录表单卡片（白色背景悬浮） ===== -->
+  <div class="login-card">
+    <div class="form-title">
+      <span class="title-icon-small">🔐</span>
+      <span>用户登录</span>
     </div>
 
-    <div class="login-body">
-      <div class="login-card">
-        <h2>用户登录</h2>
-        <div class="form-group">
-          <label for="username">账号</label>
-          <input type="text" id="username" placeholder="请输入账号">
-        </div>
-        <div class="form-group">
-          <label for="password">密码</label>
-          <input type="password" id="password" placeholder="请输入密码">
-        </div>
-        <div class="error-msg" id="errorMsg">账号或密码错误</div>
-        <button class="btn-login" onclick="handleLogin()">登录</button>
+    <div class="form-group">
+      <label for="username">账号</label>
+      <div class="input-wrapper">
+        <input type="text" id="username" placeholder="请输入账号">
       </div>
     </div>
 
-    <div class="accounts">
-      <div class="account-grid">
-        <div class="account-item admin" onclick="quickLogin('900001','admin123')">
-          <div class="account-icon">🛠️</div>
-          <div class="account-label">管理员</div>
-          <div class="account-username">900001</div>
-        </div>
+    <div class="form-group">
+      <label for="password">密码</label>
+      <div class="input-wrapper">
+        <input type="password" id="password" placeholder="请输入密码">
+        <button type="button" class="toggle-pwd" id="togglePwdBtn" onclick="togglePassword()" aria-label="显示/隐藏密码">👁️</button>
       </div>
     </div>
 
-    <div class="footer">
-      TCA-System · 华东师范大学 · v2.0
+    <div class="error-msg" id="errorMsg">账号或密码错误</div>
+
+    <button class="btn-login" onclick="handleLogin()">
+      <span class="btn-icon">🔑</span>
+      <span>登 录</span>
+    </button>
+  </div>
+
+  <!-- ===== 快捷登录 ===== -->
+  <div class="accounts">
+    <div class="accounts-label">— 快捷登录 —</div>
+    <div class="account-grid">
+      <div class="account-item student" onclick="quickLogin('20240001','123456')">
+        <div class="account-icon">🧑‍🎓</div>
+        <div class="account-label">学生</div>
+        <div class="account-username">20240001</div>
+      </div>
+      <div class="account-item teacher" onclick="quickLogin('100001','teacher123')">
+        <div class="account-icon">👩‍🏫</div>
+        <div class="account-label">教师</div>
+        <div class="account-username">100001</div>
+      </div>
+      <div class="account-item admin" onclick="quickLogin('900001','admin123')">
+        <div class="account-icon">🛠️</div>
+        <div class="account-label">管理员</div>
+        <div class="account-username">900001</div>
+      </div>
     </div>
   </div>
-</div>
+
+  <div class="footer">
+    智融 · 华东师范大学 · v2.0
+  </div>
 
 <script>
 function handleLogin() {
@@ -241,7 +330,6 @@ function handleLogin() {
 }
 
 function quickLogin(username, password) {
-  // 调用后端登录API
   fetch('/api/auth/login', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -250,7 +338,6 @@ function quickLogin(username, password) {
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      // 根据角色跳转
       var role = data.role;
       var routes = {
         'student': 'student.html',
@@ -268,6 +355,18 @@ function quickLogin(username, password) {
     document.getElementById('errorMsg').textContent = '网络错误';
     document.getElementById('errorMsg').style.display = 'block';
   });
+}
+
+function togglePassword() {
+  var pwdInput = document.getElementById('password');
+  var btn = document.getElementById('togglePwdBtn');
+  if (pwdInput.type === 'password') {
+    pwdInput.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    pwdInput.type = 'password';
+    btn.textContent = '👁️';
+  }
 }
 </script>
 </body>
