@@ -951,12 +951,16 @@ function initWebSocket() {
     var override = normalizeOverridePayload(data);
     showOverrideNotification(override);
     var messageKey = data.override_id ? 'teacher-override-' + data.override_id : 'teacher-ws-' + (data.trigger_event_id || Date.now());
-    addTeacherMessage(content, data.teacher_id, data.timestamp, messageKey, override);
+    if (!override.question_id || Number(override.question_id) === Number(currentQuestion)) {
+      addTeacherMessage(content, data.teacher_id, data.timestamp, messageKey, override);
+    }
     if (data.override_id && data.override_id > lastOverrideId) {
       lastOverrideId = data.override_id;
     }
     loadOverrideHistory();
-    setTimeout(loadChatHistory, 800);
+    if (!override.question_id || Number(override.question_id) === Number(currentQuestion)) {
+      setTimeout(function() { loadChatHistory(currentQuestion); }, 800);
+    }
   });
   wsClient.connect();
 }
@@ -1109,7 +1113,10 @@ document.getElementById('overrideNoticeDismiss').addEventListener('click', dismi
 document.getElementById('overrideNoticeLater').addEventListener('click', snoozeOverrideNotification);
 document.getElementById('overrideNoticeView').addEventListener('click', function() {
   if (latestNotificationOverride) {
-    scrollToOverrideCard(latestNotificationOverride.id || latestNotificationOverride.override_id);
+    scrollToOverrideCard(
+      latestNotificationOverride.id || latestNotificationOverride.override_id,
+      latestNotificationOverride.question_id
+    );
   }
 });
 document.getElementById('overrideHistoryHeader').addEventListener('click', function() {
@@ -1222,6 +1229,9 @@ function addTeacherMessage(content, teacherId, timeValue, key, overrideData) {
 
 function normalizeOverridePayload(raw) {
   raw = raw || {};
+  var questionId = raw.question_id !== undefined && raw.question_id !== null && raw.question_id !== ''
+    ? Number(raw.question_id)
+    : null;
   return {
     id: raw.id || raw.override_id || null,
     override_id: raw.override_id || raw.id || null,
@@ -1229,7 +1239,7 @@ function normalizeOverridePayload(raw) {
     override_type: raw.override_type || raw.target_agent || raw.agent || '',
     intervention_type: raw.intervention_type || raw.type || 'manual_override',
     content: raw.content || '',
-    question_id: raw.question_id || currentQuestion,
+    question_id: Number.isFinite(questionId) ? questionId : null,
     created_at: raw.created_at || raw.timestamp || raw.time || null,
     trigger_event_id: raw.trigger_event_id || null,
     feedback: raw.feedback || ''
@@ -1249,7 +1259,7 @@ function getOverrideTypeLabel(override) {
 
 function buildOverrideMeta(override) {
   var parts = [];
-  parts.push('题目：第 ' + (override.question_id || currentQuestion) + ' 题');
+  parts.push('题目：第 ' + (override.question_id || '未知') + ' 题');
   if (override.teacher_id) parts.push('教师：' + override.teacher_id);
   if (override.trigger_event_id) parts.push('触发事件：' + override.trigger_event_id);
   return parts.join(' · ');
@@ -1312,12 +1322,19 @@ function snoozeOverrideNotification() {
   }
 }
 
-function scrollToOverrideCard(overrideId) {
+function scrollToOverrideCard(overrideId, questionId) {
   if (!overrideId) return;
+  var targetQuestion = questionId ? Number(questionId) : null;
+  if (targetQuestion && Number.isFinite(targetQuestion) && targetQuestion !== Number(currentQuestion)) {
+    currentQuestion = targetQuestion;
+    updateQuestionUI();
+    setTimeout(function() { scrollToOverrideCard(overrideId, targetQuestion); }, 900);
+    return;
+  }
   var target = document.getElementById('override-card-' + overrideId);
   if (!target) {
-    loadChatHistory();
-    setTimeout(function() { scrollToOverrideCard(overrideId); }, 700);
+    loadChatHistory(targetQuestion || currentQuestion);
+    setTimeout(function() { scrollToOverrideCard(overrideId, targetQuestion); }, 700);
     return;
   }
   target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1451,7 +1468,9 @@ function pollOverrides() {
         var latest = normalizeOverridePayload(newItems[newItems.length - 1]);
         showOverrideNotification(latest);
         lastOverrideId = data.latest_override_id || latest.id || lastOverrideId;
-        loadChatHistory();
+        if (!latest.question_id || Number(latest.question_id) === Number(currentQuestion)) {
+          loadChatHistory(currentQuestion);
+        }
       } else {
         lastOverrideId = data.latest_override_id || lastOverrideId;
       }
@@ -1470,7 +1489,8 @@ function renderOverrideHistory(overrides) {
   list.innerHTML = overrides.map(function(item) {
     var override = normalizeOverridePayload(item);
     var id = Number(override.id || 0);
-    return '<div class="override-history-item" onclick="scrollToOverrideCard(' + id + ')">' +
+    var questionId = Number(override.question_id || 0);
+    return '<div class="override-history-item" onclick="scrollToOverrideCard(' + id + ', ' + questionId + ')">' +
       '<div class="override-history-item-title">第 ' + escapeHtml(override.question_id || '-') + ' 题 · ' + escapeHtml(formatFullTime(override.created_at)) + '</div>' +
       '<div class="override-history-item-text">' + escapeHtml(normalizeMathText(override.content || '教师指导')) + '</div>' +
     '</div>';
