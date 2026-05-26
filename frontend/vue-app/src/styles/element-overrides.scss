@@ -1,0 +1,25 @@
+@use './variables' as *;
+
+:root {
+  --el-color-primary: #667eea;
+  --el-color-success: #4CAF50;
+  --el-color-warning: #FF9800;
+  --el-color-danger: #ff4d4f;
+  --el-color-info: #2E86AB;
+  --el-border-radius-base: 12px;
+  --el-font-size-base: 16px;
+}
+
+.el-input__wrapper {
+  border-radius: $radius-input;
+  box-shadow: 0 0 0 2px $border-default inset;
+  transition: $transition-default;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: $shadow-input-focus, 0 0 0 2px $border-focus inset;
+}
+
+.el-button {
+  border-radius: $radius-button;
+}

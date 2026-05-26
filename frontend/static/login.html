@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA-System 登录</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8f9fa;
+    --color-border-tertiary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-text-primary: #333333;
+    --color-text-secondary: #666666;
+    --color-text-tertiary: #9ca3af;
+    --color-c-blue-600: #667eea;
+    --color-c-blue-800: #1e40af;
+    --color-c-blue-50: #eff6ff;
+    --color-c-teal-50: #f0fdfa;
+    --color-c-teal-800: #115e59;
+    --color-c-teal-600: #0d9488;
+    --color-c-gray-50: #f9fafb;
+    --color-c-gray-800: #1f2937;
+    --color-c-gray-600: #6b7280;
+    --gradient-brand: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-btn: linear-gradient(135deg, #2E86AB 0%, #4CAF50 100%);
+    --shadow-card: 0 15px 50px rgba(0,0,0,0.25);
+    --shadow-btn: 0 4px 15px rgba(46,134,171,0.3);
+    --shadow-btn-hover: 0 6px 20px rgba(46,134,171,0.4);
+    --shadow-text: 2px 2px 4px rgba(0,0,0,0.2);
+    --shadow-input-focus: 0 0 0 3px rgba(46,134,171,0.1);
+    --border-radius-lg: 20px;
+    --border-radius-md: 12px;
+    --border-radius-sm: 8px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--gradient-brand);
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    max-width: 420px;
+    width: 100%;
+  }
+  .card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-card);
+  }
+  .header {
+    background: transparent;
+    padding: 40px 40px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #111827;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  }
+  .header p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  .login-body {
+    padding: 24px 40px;
+  }
+  .login-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 28px 24px;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+  .login-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .form-group input {
+    width: 100%;
+    border: 2px solid #E8E8E8;
+    border-radius: var(--border-radius-md);
+    padding: 14px 16px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    font-family: var(--font-sans);
+  }
+  .form-group input:focus {
+    border-color: #2E86AB;
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+  }
+  .btn-login {
+    width: 100%;
+    padding: 14px 40px;
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+    letter-spacing: 1px;
+  }
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-btn-hover);
+  }
+  .btn-login:active {
+    transform: translateY(0);
+  }
+  .accounts {
+    padding: 0 40px 24px;
+  }
+  .account-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 14px 12px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+  }
+  .account-item {
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .account-item:hover {
+    background: var(--color-background-secondary);
+  }
+  .account-item.student { background: var(--color-c-blue-50); }
+  .account-item.teacher { background: var(--color-c-teal-50); }
+  .account-item.admin { background: var(--color-c-gray-50); }
+  .account-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+  .account-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-c-gray-800);
+  }
+  .account-username {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .footer {
+    padding: 12px 32px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+  }
+  .error-msg {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  }
+</style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/websocket.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>TCA-System</h1>
+      <p>面向K-12的教师可控多智能体AI辅导系统</p>
+    </div>
+
+    <div class="login-body">
+      <div class="login-card">
+        <h2>用户登录</h2>
+        <div class="form-group">
+          <label for="username">账号</label>
+          <input type="text" id="username" placeholder="请输入账号">
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" placeholder="请输入密码">
+        </div>
+        <div class="error-msg" id="errorMsg">账号或密码错误</div>
+        <button class="btn-login" onclick="handleLogin()">登录</button>
+      </div>
+    </div>
+
+    <div class="accounts">
+      <div class="account-grid">
+        <div class="account-item admin" onclick="quickLogin('900001','admin123')">
+          <div class="account-icon">🛠️</div>
+          <div class="account-label">管理员</div>
+          <div class="account-username">900001</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      TCA-System · 华东师范大学 · v2.0
+    </div>
+  </div>
+</div>
+
+<script>
+function handleLogin() {
+  var username = document.getElementById('username').value;
+  var password = document.getElementById('password').value;
+  quickLogin(username, password);
+}
+
+function quickLogin(username, password) {
+  // 调用后端登录API
+  fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id: username, password: password})
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // 根据角色跳转
+      var role = data.role;
+      var routes = {
+        'student': 'student.html',
+        'teacher': 'teacher.html',
+        'admin_exp': 'admin.html',
+        'admin_sys': 'admin.html'
+      };
+      window.location.href = data.redirect || routes[role] || 'student.html';
+    } else {
+      document.getElementById('errorMsg').textContent = data.error;
+      document.getElementById('errorMsg').style.display = 'block';
+    }
+  })
+  .catch(error => {
+    document.getElementById('errorMsg').textContent = '网络错误';
+    document.getElementById('errorMsg').style.display = 'block';
+  });
+}
+</script>
+</body>
+</html>

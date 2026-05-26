@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA-System 学生端</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8f9fa;
+    --color-border-tertiary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-text-primary: #333333;
+    --color-text-secondary: #666666;
+    --color-text-tertiary: #9ca3af;
+    --color-c-blue-600: #2563eb;
+    --color-c-blue-800: #1e40af;
+    --color-c-blue-50: #eff6ff;
+    --color-c-blue-200: #bfdbfe;
+    --color-c-amber-50: #fffbeb;
+    --color-c-amber-200: #fde68a;
+    --color-c-amber-600: #d97706;
+    --color-c-amber-800: #92400e;
+    --color-c-coral-600: #e11d48;
+    --color-c-purple-400: #c084fc;
+    --color-c-purple-600: #7c3aed;
+    --color-c-teal-600: #0d9488;
+    --color-c-green-600: #059669;
+    --color-c-gray-500: #6b7280;
+    --gradient-brand: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-btn: linear-gradient(135deg, #2E86AB 0%, #4CAF50 100%);
+    --gradient-guide: linear-gradient(135deg, #667eea, #764ba2);
+    --gradient-tutor: linear-gradient(135deg, #2E86AB, #4CAF50);
+    --gradient-evaluator: linear-gradient(135deg, #FF9800, #F44336);
+    --gradient-user-bubble: linear-gradient(135deg, #2E86AB 0%, #4CAF50 100%);
+    --gradient-chat-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --shadow-card: 0 15px 50px rgba(0,0,0,0.25);
+    --shadow-btn: 0 4px 15px rgba(46,134,171,0.3);
+    --shadow-btn-hover: 0 6px 20px rgba(46,134,171,0.4);
+    --shadow-text: 2px 2px 4px rgba(0,0,0,0.2);
+    --shadow-input-focus: 0 0 0 3px rgba(46,134,171,0.1);
+    --border-radius-lg: 20px;
+    --border-radius-md: 12px;
+    --border-radius-sm: 8px;
+    --color-group-sa: #9E9E9E;
+    --color-group-exp: #667eea;
+    --color-group-ai-auto: #00BCD4;
+    --color-group-tca: #764ba2;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--gradient-brand);
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: center;
+    padding: 12px;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .page-wrapper {
+    max-width: 1680px;
+    width: 100%;
+    height: calc(100vh - 24px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  /* 顶栏 */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(10px);
+  }
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-username {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .topbar-group {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+  }
+  .topbar-group[data-group="SA"] { color: #9E9E9E; background: #f5f5f5; }
+  .topbar-group[data-group="EXP"] { color: #667eea; background: #eef1ff; }
+  .topbar-group[data-group="AI-AUTO"] { color: #00BCD4; background: #e0f7fa; }
+  .topbar-group[data-group="TCA"] { color: #764ba2; background: #f3e8ff; }
+  .topbar-logout {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+  }
+  .topbar-logout:hover {
+    color: var(--color-c-coral-600);
+  }
+
+  /* 题目区域 */
+  .question-area {
+    padding: 14px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    min-height: 148px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .question-number {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .question-attempt {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .question-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #374151;
+    margin-bottom: 10px;
+    flex: 1;
+  }
+  .question-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .nav-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover:not(:disabled) {
+    border-color: var(--color-c-blue-600);
+    color: var(--color-c-blue-600);
+  }
+  .nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .answer-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .answer-input {
+    flex: 1;
+    border: 2px solid #E8E8E8;
+    border-radius: var(--border-radius-md);
+    padding: 14px 16px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+    background: white;
+  }
+  .answer-input:focus {
+    border-color: #2E86AB;
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+  }
+  .submit-btn {
+    padding: 14px 28px;
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-btn-hover);
+  }
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  /* 对话区域 */
+  .chat-area {
+    padding: 20px;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: var(--gradient-chat-bg);
+    scroll-behavior: smooth;
+  }
+  .chat-message {
+    margin-bottom: 14px;
+    animation: messageIn 0.3s ease forwards;
+  }
+  .msg-agent-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .msg-agent-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    border-radius: 12px;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gradient-guide);
+  }
+  .msg-agent-name.agent-tutor {
+    background: var(--gradient-tutor);
+  }
+  .msg-agent-name.agent-guide {
+    background: var(--gradient-guide);
+  }
+  .msg-mode-tag {
+    font-size: 11px;
+  }
+  .msg-bubble {
+    border: 2px solid #E8E8E8;
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 18px;
+    max-width: 80%;
+    display: inline-block;
+    background: white;
+  }
+  .msg-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .msg-time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+  .msg-user {
+    text-align: right;
+  }
+  .msg-user .msg-bubble {
+    text-align: left;
+    color: white;
+    border: none;
+    border-radius: 18px 18px 4px 18px;
+    background: var(--gradient-user-bubble);
+    box-shadow: var(--shadow-btn);
+    max-width: 70%;
+  }
+  .msg-user .msg-time {
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* 解释气泡 */
+  .exp-bubble {
+    border: 0.5px solid var(--color-c-amber-200);
+    background: var(--color-c-amber-50);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 14px;
+    max-width: 90%;
+    display: inline-block;
+  }
+  .exp-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .exp-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-c-amber-800);
+  }
+  .exp-time {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  /* 教师通知气泡 */
+  .teacher-bubble {
+    border: 0.5px solid var(--color-c-blue-200);
+    background: var(--color-c-blue-50);
+    border-radius: var(--border-radius-lg);
+    padding: 10px 14px;
+    max-width: 90%;
+    display: inline-block;
+  }
+  .teacher-bubble p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .teacher-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e40af;
+  }
+  .teacher-info {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 6px;
+    text-align: right;
+  }
+  .teacher-note-wrapper {
+    margin-bottom: 14px;
+  }
+  .override-notification {
+    margin: 0 16px;
+    border: 1px solid var(--color-c-amber-200);
+    background: var(--color-c-amber-50);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    animation: slideInFromRight 0.3s ease;
+  }
+  .override-notification.hidden {
+    display: none;
+  }
+  .override-notification-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .override-notification-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-c-amber-800);
+    margin-bottom: 2px;
+  }
+  .override-notification-text {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .override-notification-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .override-action-btn,
+  .feedback-btn {
+    border: 0.5px solid var(--color-border-secondary);
+    background: white;
+    border-radius: var(--border-radius-md);
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .override-action-btn.primary {
+    background: var(--gradient-btn);
+    border-color: var(--color-c-blue-600);
+    color: white;
+  }
+  .teacher-override-card {
+    border: 1px solid var(--color-c-amber-200);
+    border-left: 4px solid #FF9800;
+    background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 14px;
+    max-width: 92%;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  .teacher-override-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .teacher-override-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .override-badge {
+    background: #fef3c7;
+    color: var(--color-c-amber-800);
+    border: 0.5px solid var(--color-c-amber-200);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .override-source {
+    color: #1e40af;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .override-time {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .teacher-override-content {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #111827;
+    margin: 0;
+  }
+  .override-meta {
+    color: var(--color-text-tertiary);
+    font-size: 11px;
+    margin-top: 7px;
+  }
+  .override-feedback {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .feedback-btn.selected {
+    background: var(--color-c-blue-50);
+    border-color: var(--color-c-blue-200);
+    color: var(--color-c-blue-600);
+    font-weight: 600;
+  }
+  .override-history-panel {
+    position: fixed;
+    right: 18px;
+    top: 90px;
+    width: 220px;
+    max-height: 58vh;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    z-index: 20;
+    overflow: hidden;
+  }
+  .override-history-panel.collapsed .override-history-list {
+    display: none;
+  }
+  .override-history-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .override-history-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .override-history-count {
+    font-size: 11px;
+    color: var(--color-c-blue-600);
+  }
+  .override-history-list {
+    max-height: calc(58vh - 43px);
+    overflow-y: auto;
+  }
+  .override-history-item {
+    padding: 9px 12px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    cursor: pointer;
+  }
+  .override-history-item:hover {
+    background: var(--color-c-blue-50);
+  }
+  .override-history-item-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 3px;
+  }
+  .override-history-item-text {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 底部操作栏 */
+  .bottom-bar {
+    padding: 12px 16px;
+    flex-shrink: 0;
+    background: var(--color-background-primary);
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .chat-input {
+    flex: 1;
+    border: 2px solid #E8E8E8;
+    border-radius: var(--border-radius-md);
+    padding: 14px 16px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+    background: white;
+  }
+  .chat-input:focus {
+    border-color: #2E86AB;
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+  }
+  .send-btn {
+    padding: 14px 28px;
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+  }
+  .send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-btn-hover);
+  }
+  .send-btn:active {
+    transform: translateY(0);
+  }
+  .clear-chat-btn {
+    padding: 9px 12px;
+    background: white;
+    color: var(--color-text-secondary);
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .clear-chat-btn:hover {
+    border-color: var(--color-c-coral-600);
+    color: var(--color-c-coral-600);
+  }
+
+  /* 求助按钮 + 对话框 (仅TCA组可见) */
+  .help-section {
+    margin-top: 6px;
+    position: relative;
+  }
+  .help-trigger {
+    font-size: 14px;
+    color: #2E86AB;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 2px solid #2E86AB;
+    border-radius: var(--border-radius-md);
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(10px);
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  .help-trigger:hover {
+    background: rgba(46,134,171,0.08);
+    transform: translateY(-1px);
+  }
+  .help-trigger:hover {
+    text-decoration: underline;
+  }
+  .help-trigger.disabled {
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+  .help-remain {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .help-remain.hidden {
+    display: none;
+  }
+  .help-dialog {
+    display: none;
+    position: fixed;
+    right: 32px;
+    bottom: 96px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    padding: 14px;
+    box-shadow: 0 12px 34px rgba(15,23,42,0.18);
+    width: min(380px, calc(100vw - 40px));
+    z-index: 1000;
+  }
+  .help-dialog.show {
+    display: block;
+  }
+  /* 帮助对话框三角箭头指向按钮 */
+  .help-dialog::before {
+    display: none;
+  }
+  .help-dialog::after {
+    display: none;
+  }
+  .help-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .help-dialog-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .help-close {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+    line-height: 1;
+  }
+  .help-close:hover {
+    color: var(--color-c-coral-600);
+  }
+  .help-textarea {
+    width: 100%;
+    height: 92px;
+    padding: 10px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    box-sizing: border-box;
+    font-family: var(--font-sans);
+    transition: border-color 0.2s;
+  }
+  .help-textarea:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+  }
+  .help-submit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .help-send-btn {
+    padding: 5px 14px;
+    background: var(--color-c-coral-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+  }
+  .help-send-btn:hover {
+    background: #be123c;
+  }
+
+  .footer {
+    padding: 8px 16px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* 四组差异表格 */
+  .diff-table-section {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .diff-table-section h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #111827;
+  }
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .diff-table th {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 7px 10px;
+    background: var(--color-background-secondary);
+    text-align: left;
+    font-weight: 500;
+    color: #374151;
+  }
+  .diff-table td {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 7px 10px;
+    text-align: center;
+  }
+  .diff-cell-green { color: var(--color-c-green-600); }
+  .diff-cell-purple { color: var(--color-c-purple-600); }
+  .diff-cell-amber { color: var(--color-c-amber-600); }
+  .diff-cell-coral { color: var(--color-c-coral-600); }
+  .diff-cell-muted { color: var(--color-text-tertiary); }
+  .diff-cell-deleted {
+    background: #fef2f2;
+    color: #dc2626;
+    font-weight: 500;
+  }
+  @keyframes messageIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slideInFromRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @media (max-width: 900px) {
+    body { padding: 0; }
+    .page-wrapper { height: 100vh; max-width: none; }
+    .card { border-radius: 0; height: 100vh; min-height: 0; }
+    .help-dialog {
+      left: 12px;
+      right: 12px;
+      bottom: 86px;
+      width: auto;
+    }
+    .teacher-override-card,
+    .msg-bubble,
+    .exp-bubble,
+    .teacher-bubble {
+      max-width: 100%;
+    }
+    .override-notification {
+      margin: 0 10px;
+      align-items: flex-start;
+    }
+    .override-notification-actions {
+      flex-direction: column;
+    }
+    .override-history-panel {
+      position: static;
+      width: auto;
+      max-height: none;
+      margin: 8px 10px 0;
+    }
+  }
+</style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/websocket.js"></script>
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- 学生端主卡 -->
+  <div class="card">
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <div class="topbar-title">TCA-System</div>
+      <div class="topbar-right">
+        <span class="topbar-username" id="studentUsername">加载中...</span>
+        <span class="topbar-group" id="studentGroup">—</span>
+        <span class="topbar-logout" onclick="doLogout()">退出</span>
+      </div>
+    </div>
+
+    <!-- 题目区域（固定高度 ~140px） -->
+    <div class="override-notification hidden" id="overrideNotification">
+      <div class="override-notification-main">
+        <div class="override-notification-title" id="overrideNoticeTitle">教师发来新的指导</div>
+        <div class="override-notification-text" id="overrideNoticeText"></div>
+      </div>
+      <div class="override-notification-actions">
+        <button class="override-action-btn primary" type="button" id="overrideNoticeView">查看</button>
+        <button class="override-action-btn" type="button" id="overrideNoticeLater">稍后</button>
+        <button class="override-action-btn" type="button" id="overrideNoticeDismiss">关闭</button>
+      </div>
+    </div>
+
+    <div class="question-area" id="questionArea">
+      <div class="question-header">
+        <span class="question-number" id="qNumber">第 3/8 题</span>
+        <span class="question-attempt" id="qAttempt">(未提交)</span>
+      </div>
+      <div class="question-text" id="qText">
+        📝 已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。
+      </div>
+      <div class="question-nav">
+        <button class="nav-btn" id="prevBtn" disabled>← 上一题</button>
+        <button class="nav-btn" id="nextBtn">下一题 →</button>
+      </div>
+      <div class="answer-row">
+        <input class="answer-input" id="answerInput" placeholder="输入本题答案...">
+        <button class="submit-btn" id="submitAnswerBtn">提交</button>
+      </div>
+    </div>
+
+    <!-- 对话区域 -->
+    <div class="chat-area" id="chatArea"></div>
+
+    <!-- 底部操作栏 -->
+    <div class="bottom-bar">
+      <div class="input-row">
+        <input class="chat-input" id="chatInput" placeholder="输入消息与AI对话...">
+        <button class="clear-chat-btn" id="clearChatBtn" title="清空当前题对话">清空</button>
+        <button class="send-btn" id="chatSendBtn">发送</button>
+      </div>
+      <!-- 求助区域（仅TCA组可见） -->
+      <div class="help-section" id="helpSection">
+        <span class="help-trigger" id="helpTrigger">
+          🆘 请求教师帮助
+        </span>
+        <span class="help-remain hidden" id="helpRemain"></span>
+
+        <div class="help-dialog" id="helpDialog">
+          <div class="help-dialog-header">
+            <span class="help-dialog-title">向教师发送求助</span>
+            <span class="help-close" id="helpClose">✕</span>
+          </div>
+          <textarea class="help-textarea" id="helpTextarea" placeholder="老师，我在这道题上卡住了..."></textarea>
+          <div class="help-submit-row">
+            <button class="help-send-btn" id="helpSendBtn">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      TCA-System · 华东师范大学 · v2.0
+    </div>
+  </div>
+  <div class="override-history-panel collapsed" id="overrideHistoryPanel">
+    <div class="override-history-header" id="overrideHistoryHeader">
+      <span class="override-history-title">教师指导</span>
+      <span class="override-history-count" id="overrideHistoryCount">0 条</span>
+    </div>
+    <div class="override-history-list" id="overrideHistoryList"></div>
+  </div>
+</div>
+
+<script>
+var API_BASE = window.location.origin;
+var helpRemaining = Infinity;
+var helpLimit = Infinity;
+var currentQuestion = 3;
+var totalQuestions = 8;
+var userCondition = null;
+var userId = null;
+var wsClient = null;
+var currentAgent = 'Guide';
+var renderedMessageKeys = {};
+var historyTimer = null;
+var overrideTimer = null;
+var chatSending = false;
+var pendingUserMessages = [];
+var activeHistoryRequest = 0;
+var lastOverrideId = 0;
+var latestNotificationOverride = null;
+var overrideNoticeTimer = null;
+var questions = {
+  1: '📝 选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）',
+  2: '📝 选择题：请根据题干选择正确选项。（测试题，标准答案为 A）',
+  3: '📝 已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。',
+  4: '📝 三角形三个内角的和是多少度？',
+  5: '📝 选择题：请选择正确选项。（测试题，标准答案为 A）',
+  6: '📝 应用题：请写出你的推理过程。',
+  7: '📝 计算题：请完成本题并填写最终答案。',
+  8: '📝 综合题：请根据题意给出答案。'
+};
+
+// ====== 页面初始化：检查登录态 & 获取学生信息 ======
+function initPage() {
+  // 先检查登录态
+  fetch(API_BASE + '/api/auth/check', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.logged_in) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (data.role !== 'student') {
+        var routes = {
+          teacher: 'teacher.html',
+          admin_exp: 'admin.html',
+          admin_sys: 'admin.html'
+        };
+        window.location.href = routes[data.role] || 'login.html';
+        return;
+      }
+      userId = data.user_info.user_id;
+      initWebSocket();
+      // 获取学生详细信息
+      return fetch(API_BASE + '/api/student/info', { credentials: 'include' });
+    })
+    .then(function(r) { return r ? r.json() : null; })
+    .then(function(data) {
+      if (data && data.success) {
+        var info = data.user_info;
+        document.getElementById('studentUsername').textContent = info.name || info.user_id;
+        document.getElementById('studentGroup').textContent = info.condition + '组';
+        userCondition = info.condition;
+        currentQuestion = Number(info.current_question || currentQuestion);
+        if (currentQuestion < 3) {
+          currentQuestion = 3;
+        }
+        totalQuestions = Number(info.total_questions || totalQuestions);
+        updateQuestionUI();
+        loadChatHistory();
+        loadOverrideHistory(true);
+        startHistoryPolling();
+        renderInitialGuide();
+        // 根据条件控制UI显示
+        applyConditionUI(info.condition);
+      } else if (data) {
+        // 如果student info没找到，至少显示user_id
+        document.getElementById('studentUsername').textContent = '学生 ' + userId;
+      }
+    })
+    .catch(function(err) {
+      console.error('初始化失败:', err);
+    });
+}
+
+function initWebSocket() {
+  if (wsClient || !window.TCAWebSocket) return;
+  wsClient = new TCAWebSocket();
+  wsClient.on('teacher_override', function(data) {
+    var content = data.content || '教师发送了一条干预提示';
+    var override = normalizeOverridePayload(data);
+    showOverrideNotification(override);
+    var messageKey = data.override_id ? 'teacher-override-' + data.override_id : 'teacher-ws-' + (data.trigger_event_id || Date.now());
+    if (!override.question_id || Number(override.question_id) === Number(currentQuestion)) {
+      addTeacherMessage(content, data.teacher_id, data.timestamp, messageKey, override);
+    }
+    if (data.override_id && data.override_id > lastOverrideId) {
+      lastOverrideId = data.override_id;
+    }
+    loadOverrideHistory();
+    if (!override.question_id || Number(override.question_id) === Number(currentQuestion)) {
+      setTimeout(function() { loadChatHistory(currentQuestion); }, 800);
+    }
+  });
+  wsClient.connect();
+}
+
+// ====== 根据实验条件控制UI ======
+function applyConditionUI(condition) {
+  // 帮助按钮：仅TCA组可见
+  var helpSection = document.getElementById('helpSection');
+  if (helpSection) {
+    helpSection.style.display = (condition === 'TCA') ? '' : 'none';
+  }
+}
+
+function renderInitialGuide() {
+  var chatArea = document.getElementById('chatArea');
+  if (!chatArea || chatArea.children.length > 0) return;
+  addChatMessage('guide', '我们先看当前题目。你可以直接提交答案，也可以先说说你的思路。');
+}
+
+// ====== 退出登录 ======
+function doLogout() {
+  fetch(API_BASE + '/api/auth/logout', {
+    method: 'POST',
+    credentials: 'include'
+  }).then(function() {
+    window.location.href = 'login.html';
+  }).catch(function() {
+    window.location.href = 'login.html';
+  });
+}
+
+// ====== 求助按钮交互（仅TCA组） ======
+document.getElementById('helpTrigger').addEventListener('click', function(e) {
+  var dialog = document.getElementById('helpDialog');
+  dialog.classList.toggle('show');
+  if (dialog.classList.contains('show')) {
+    document.getElementById('helpTextarea').focus();
+  }
+});
+
+document.getElementById('helpClose').addEventListener('click', function() {
+  document.getElementById('helpDialog').classList.remove('show');
+});
+
+document.addEventListener('click', function(e) {
+  var dialog = document.getElementById('helpDialog');
+  var trigger = document.getElementById('helpTrigger');
+  if (dialog.classList.contains('show') && !dialog.contains(e.target) && !trigger.contains(e.target)) {
+    dialog.classList.remove('show');
+  }
+});
+
+document.getElementById('helpSendBtn').addEventListener('click', function() {
+  var text = document.getElementById('helpTextarea').value.trim();
+  if (!text) {
+    alert('请输入求助内容');
+    return;
+  }
+  document.getElementById('helpDialog').classList.remove('show');
+  document.getElementById('helpTextarea').value = '';
+  // 发送求助到后端（预留API接口）
+  var data = { student_id: userId, content: text, question_id: currentQuestion };
+  fetch(API_BASE + '/api/teacher/help-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).catch(function() {
+    // 后端API尚未实现时静默失败
+    console.log('求助已记录（离线模式）');
+  });
+});
+
+// ====== 题目导航 ======
+document.getElementById('prevBtn').addEventListener('click', function() {
+  if (currentQuestion > 1) { currentQuestion--; updateQuestionUI(); }
+});
+document.getElementById('nextBtn').addEventListener('click', function() {
+  if (currentQuestion < totalQuestions) { currentQuestion++; updateQuestionUI(); }
+});
+// 提交答案按钮
+document.getElementById('submitAnswerBtn').addEventListener('click', function() {
+  var answer = document.getElementById('answerInput').value.trim();
+  if (!answer) { alert('请输入答案'); return; }
+  // 提交答案到后端（预留API接口）
+  var data = { student_id: userId, question_id: currentQuestion, answer: answer };
+  fetch(API_BASE + '/api/student/submit-answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success) {
+        document.getElementById('qAttempt').textContent = '(已提交)';
+        var feedback = '答案已提交，评分：' + (resp.score !== undefined ? resp.score + '/100' : '评分中...');
+        if (resp.error_type && resp.error_type !== 'none') {
+          feedback += '；错误类型：' + resp.error_type;
+        }
+        if (resp.error_streak !== undefined) {
+          feedback += '；错误累计：' + Number(resp.error_streak).toFixed(1);
+        }
+        if (resp.triggered) {
+          feedback += '；已触发：' + resp.trigger_level + '（' + resp.trigger_strength + '）';
+        }
+        if (resp.switched) {
+          currentAgent = resp.current_agent || currentAgent;
+          feedback += '；当前模式切换为：' + currentAgent;
+        }
+        if (resp.suggestion) {
+          feedback += '。' + resp.suggestion;
+        }
+        addChatMessage('system', feedback);
+        if (resp.explanation) {
+          addChatMessage('guide', resp.explanation);
+        }
+      } else {
+        addChatMessage('system', '答案提交失败');
+      }
+    }).catch(function() {
+      // 后端API尚未实现时本地模拟
+      addChatMessage('system', '答案已提交（离线模式）');
+    });
+  document.getElementById('answerInput').value = '';
+});
+
+function updateQuestionUI() {
+  document.getElementById('qNumber').textContent = '第 ' + currentQuestion + '/' + totalQuestions + ' 题';
+  document.getElementById('prevBtn').disabled = currentQuestion === 1;
+  document.getElementById('nextBtn').disabled = currentQuestion === totalQuestions;
+  document.getElementById('qAttempt').textContent = '(未提交)';
+  document.getElementById('qText').textContent = questions[currentQuestion] || '📝 请完成当前题目。';
+  renderedMessageKeys = {};
+  document.getElementById('chatArea').innerHTML = '';
+  loadChatHistory(currentQuestion, true);
+}
+
+// ====== 聊天功能 ======
+document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
+document.getElementById('clearChatBtn').addEventListener('click', clearCurrentChat);
+document.getElementById('overrideNoticeDismiss').addEventListener('click', dismissOverrideNotification);
+document.getElementById('overrideNoticeLater').addEventListener('click', snoozeOverrideNotification);
+document.getElementById('overrideNoticeView').addEventListener('click', function() {
+  if (latestNotificationOverride) {
+    scrollToOverrideCard(
+      latestNotificationOverride.id || latestNotificationOverride.override_id,
+      latestNotificationOverride.question_id
+    );
+  }
+});
+document.getElementById('overrideHistoryHeader').addEventListener('click', function() {
+  document.getElementById('overrideHistoryPanel').classList.toggle('collapsed');
+});
+
+function sendChatMessage() {
+  if (chatSending) return;
+  var msg = document.getElementById('chatInput').value.trim();
+  if (!msg) return;
+  chatSending = true;
+  document.getElementById('chatSendBtn').disabled = true;
+  document.getElementById('chatInput').value = '';
+  pendingUserMessages.push({
+    content: msg,
+    sentAt: Date.now()
+  });
+  addChatMessage('user', msg, null, 'local-user-' + Date.now());
+  var data = { student_id: userId, question_id: currentQuestion, message: msg };
+  fetch(API_BASE + '/api/student/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data)
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp.success) {
+        currentAgent = resp.agent || currentAgent;
+        loadChatHistory();
+      } else {
+        addChatMessage('system', resp.error || '消息发送失败');
+      }
+    }).catch(function() {
+      addChatMessage('system', '消息发送失败，请稍后重试。');
+    }).finally(function() {
+      chatSending = false;
+      document.getElementById('chatSendBtn').disabled = false;
+    });
+}
+
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('chatSendBtn').click();
+  }
+});
+
+document.getElementById('answerInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('submitAnswerBtn').click();
+  }
+});
+
+function addChatMessage(type, content, timeValue, key) {
+  if (key && renderedMessageKeys[key]) return;
+  if (key) renderedMessageKeys[key] = true;
+  content = normalizeMathText(content);
+  var chatArea = document.getElementById('chatArea');
+  var div = document.createElement('div');
+  div.className = 'chat-message' + (type === 'user' ? ' msg-user' : '');
+  var timeStr = formatMessageTime(timeValue);
+  if (type === 'guide') {
+    var agentClass = currentAgent === 'Tutor' ? 'agent-tutor' : 'agent-guide';
+    div.innerHTML = '<div class="msg-agent-label"><span class="msg-agent-name ' + agentClass + '">' + escapeHtml(currentAgent) + '</span><span class="msg-mode-tag" style="color: var(--color-c-purple-400);">(当前模式)</span></div><div class="msg-bubble"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  } else if (type === 'system') {
+    div.innerHTML = '<div class="msg-bubble" style="background: var(--color-c-amber-50);"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="msg-bubble"><p>' + escapeHtml(content) + '</p><div class="msg-time">' + timeStr + '</div></div>';
+  }
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addTeacherMessage(content, teacherId, timeValue, key, overrideData) {
+  if (key && renderedMessageKeys[key]) return;
+  if (key) renderedMessageKeys[key] = true;
+  content = normalizeMathText(content);
+  var override = normalizeOverridePayload(overrideData || {});
+  override.content = content;
+  override.teacher_id = override.teacher_id || teacherId;
+  override.created_at = override.created_at || timeValue;
+  var chatArea = document.getElementById('chatArea');
+  var div = document.createElement('div');
+  div.className = 'teacher-note-wrapper';
+  if (override.id || override.override_id) {
+    div.id = 'override-card-' + (override.id || override.override_id);
+  }
+  var timeStr = formatFullTime(override.created_at || timeValue);
+  var overrideId = Number(override.id || override.override_id || 0);
+  var feedbackHtml = overrideId ? buildFeedbackHtml(overrideId, override.feedback) : '';
+  div.innerHTML =
+    '<div class="chat-message">' +
+      '<div class="teacher-override-card">' +
+        '<div class="teacher-override-header">' +
+          '<div class="teacher-override-title">' +
+            '<span class="override-badge">教师Override</span>' +
+            '<span class="override-source">' + escapeHtml(getOverrideTypeLabel(override)) + '</span>' +
+          '</div>' +
+          '<span class="override-time">' + escapeHtml(timeStr) + '</span>' +
+        '</div>' +
+        '<p class="teacher-override-content">' + escapeHtml(content) + '</p>' +
+        '<div class="override-meta">' + escapeHtml(buildOverrideMeta(override)) + '</div>' +
+        feedbackHtml +
+      '</div>' +
+    '</div>';
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function normalizeOverridePayload(raw) {
+  raw = raw || {};
+  var questionId = raw.question_id !== undefined && raw.question_id !== null && raw.question_id !== ''
+    ? Number(raw.question_id)
+    : null;
+  return {
+    id: raw.id || raw.override_id || null,
+    override_id: raw.override_id || raw.id || null,
+    teacher_id: raw.teacher_id || raw.teacherId || null,
+    override_type: raw.override_type || raw.target_agent || raw.agent || '',
+    intervention_type: raw.intervention_type || raw.type || 'manual_override',
+    content: raw.content || '',
+    question_id: Number.isFinite(questionId) ? questionId : null,
+    created_at: raw.created_at || raw.timestamp || raw.time || null,
+    trigger_event_id: raw.trigger_event_id || null,
+    feedback: raw.feedback || ''
+  };
+}
+
+function getOverrideTypeLabel(override) {
+  var type = (override.override_type || '').toString();
+  var intervention = (override.intervention_type || '').toString();
+  if (type === 'Tutor' || type === 'Guide' || type === 'Explorer') return '切换至 ' + type;
+  if (intervention === 'scaffold') return '分步提示';
+  if (intervention === 'redirect') return '思路引导';
+  if (intervention === 'encourage') return '学习鼓励';
+  if (intervention === 'direct') return '直接解释';
+  return '教师干预';
+}
+
+function buildOverrideMeta(override) {
+  var parts = [];
+  parts.push('题目：第 ' + (override.question_id || '未知') + ' 题');
+  if (override.teacher_id) parts.push('教师：' + override.teacher_id);
+  if (override.trigger_event_id) parts.push('触发事件：' + override.trigger_event_id);
+  return parts.join(' · ');
+}
+
+function buildFeedbackHtml(overrideId, feedback) {
+  var helpfulClass = feedback === 'helpful' ? ' selected' : '';
+  var unclearClass = feedback === 'unclear' ? ' selected' : '';
+  var status = feedback ? '<span class="override-meta">已反馈：' + (feedback === 'helpful' ? '有帮助' : '不清楚') + '</span>' : '';
+  return '<div class="override-feedback" id="override-feedback-' + overrideId + '">' +
+    '<button class="feedback-btn' + helpfulClass + '" type="button" onclick="submitOverrideFeedback(' + overrideId + ', \'helpful\')">有帮助</button>' +
+    '<button class="feedback-btn' + unclearClass + '" type="button" onclick="submitOverrideFeedback(' + overrideId + ', \'unclear\')">不清楚</button>' +
+    status +
+  '</div>';
+}
+
+function submitOverrideFeedback(overrideId, feedbackType) {
+  fetch(API_BASE + '/api/student/overrides/' + encodeURIComponent(overrideId) + '/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ feedback_type: feedbackType })
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (!resp.success) {
+        alert(resp.error || '反馈提交失败');
+        return;
+      }
+      var target = document.getElementById('override-feedback-' + overrideId);
+      if (target) {
+        target.innerHTML = buildFeedbackHtml(overrideId, feedbackType).replace(/^<div[^>]*>|<\/div>$/g, '');
+      }
+      loadOverrideHistory();
+    }).catch(function() {
+      alert('反馈提交失败，请稍后重试');
+    });
+}
+
+function showOverrideNotification(override) {
+  override = normalizeOverridePayload(override);
+  latestNotificationOverride = override;
+  var notice = document.getElementById('overrideNotification');
+  document.getElementById('overrideNoticeTitle').textContent = '教师发来新的指导 · ' + getOverrideTypeLabel(override);
+  document.getElementById('overrideNoticeText').textContent = normalizeMathText(override.content || '请查看教师刚刚发送的干预提示。');
+  notice.classList.remove('hidden');
+  if (overrideNoticeTimer) clearTimeout(overrideNoticeTimer);
+  overrideNoticeTimer = setTimeout(dismissOverrideNotification, 12000);
+}
+
+function dismissOverrideNotification() {
+  var notice = document.getElementById('overrideNotification');
+  if (notice) notice.classList.add('hidden');
+  if (overrideNoticeTimer) clearTimeout(overrideNoticeTimer);
+}
+
+function snoozeOverrideNotification() {
+  dismissOverrideNotification();
+  if (latestNotificationOverride) {
+    setTimeout(function() { showOverrideNotification(latestNotificationOverride); }, 5 * 60 * 1000);
+  }
+}
+
+function scrollToOverrideCard(overrideId, questionId) {
+  if (!overrideId) return;
+  var targetQuestion = questionId ? Number(questionId) : null;
+  if (targetQuestion && Number.isFinite(targetQuestion) && targetQuestion !== Number(currentQuestion)) {
+    currentQuestion = targetQuestion;
+    updateQuestionUI();
+    setTimeout(function() { scrollToOverrideCard(overrideId, targetQuestion); }, 900);
+    return;
+  }
+  var target = document.getElementById('override-card-' + overrideId);
+  if (!target) {
+    loadChatHistory(targetQuestion || currentQuestion);
+    setTimeout(function() { scrollToOverrideCard(overrideId, targetQuestion); }, 700);
+    return;
+  }
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  dismissOverrideNotification();
+}
+
+function formatMessageTime(timeValue) {
+  var value = timeValue;
+  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
+    value += 'Z';
+  }
+  var now = value ? new Date(value) : new Date();
+  if (Number.isNaN(now.getTime())) {
+    now = new Date();
+  }
+  return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+
+function formatFullTime(timeValue) {
+  var value = timeValue;
+  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
+    value += 'Z';
+  }
+  var d = value ? new Date(value) : new Date();
+  if (Number.isNaN(d.getTime())) d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0');
+}
+
+function loadChatHistory() {
+  var questionForRequest = arguments.length > 0 ? arguments[0] : currentQuestion;
+  var showInitialWhenEmpty = arguments.length > 1 ? arguments[1] : false;
+  var requestId = ++activeHistoryRequest;
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/history?question_id=' + encodeURIComponent(questionForRequest), { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (requestId !== activeHistoryRequest || questionForRequest !== currentQuestion) return;
+      if (!data.success) return;
+      if ((!data.messages || data.messages.length === 0) && showInitialWhenEmpty) {
+        renderInitialGuide();
+        return;
+      }
+      (data.messages || []).forEach(function(msg) {
+        var key = msg.override_id ? 'teacher-override-' + msg.override_id : [msg.agent, msg.type, msg.time, msg.content].join('|');
+        if (renderedMessageKeys[key]) return;
+        if (msg.type === 'user' && consumePendingUserMessage(msg.content, msg.time)) {
+          renderedMessageKeys[key] = true;
+          return;
+        }
+        if (msg.type === 'user') {
+          addChatMessage('user', msg.content, msg.time, key);
+        } else if (msg.type === 'teacher') {
+          addTeacherMessage(msg.content, msg.agent, msg.time, key, {
+            id: msg.override_id,
+            override_id: msg.override_id,
+            teacher_id: msg.agent,
+            question_id: questionForRequest,
+            created_at: msg.time
+          });
+        } else if (msg.type === 'assistant') {
+          currentAgent = msg.agent || currentAgent;
+          addChatMessage('guide', msg.content, msg.time, key);
+        } else {
+          addChatMessage('system', msg.content, msg.time, key);
+        }
+      });
+    })
+    .catch(function() {});
+}
+
+function consumePendingUserMessage(content, timeValue) {
+  if (!pendingUserMessages.length) return false;
+  for (var i = 0; i < pendingUserMessages.length; i++) {
+    var pending = pendingUserMessages[i];
+    if (pending.content === content) {
+      pendingUserMessages.splice(i, 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+function clearCurrentChat() {
+  if (!confirm('清空当前题的对话历史？')) return;
+  fetch(API_BASE + '/api/student/history/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ question_id: currentQuestion })
+  }).then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (!resp.success) {
+        alert(resp.error || '清空失败');
+        return;
+      }
+      renderedMessageKeys = {};
+      pendingUserMessages = [];
+      document.getElementById('chatArea').innerHTML = '';
+      renderInitialGuide();
+    }).catch(function() {
+      alert('清空失败，请稍后重试');
+    });
+}
+
+function loadOverrideHistory(silent) {
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/overrides?limit=30', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      renderOverrideHistory(data.overrides || []);
+      if (silent) {
+        lastOverrideId = data.latest_override_id || lastOverrideId;
+      }
+    }).catch(function() {});
+}
+
+function pollOverrides() {
+  if (!userId) return;
+  fetch(API_BASE + '/api/student/overrides?last_override_id=' + encodeURIComponent(lastOverrideId) + '&limit=30', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success) return;
+      renderOverrideHistory(data.overrides || []);
+      var newItems = data.new_overrides || [];
+      if (newItems.length > 0) {
+        var latest = normalizeOverridePayload(newItems[newItems.length - 1]);
+        showOverrideNotification(latest);
+        lastOverrideId = data.latest_override_id || latest.id || lastOverrideId;
+        if (!latest.question_id || Number(latest.question_id) === Number(currentQuestion)) {
+          loadChatHistory(currentQuestion);
+        }
+      } else {
+        lastOverrideId = data.latest_override_id || lastOverrideId;
+      }
+    }).catch(function() {});
+}
+
+function renderOverrideHistory(overrides) {
+  var count = document.getElementById('overrideHistoryCount');
+  var list = document.getElementById('overrideHistoryList');
+  if (!count || !list) return;
+  var compact = compactOverrideHistory(overrides || []);
+  count.textContent = compact.length + ' 条';
+  if (!compact.length) {
+    list.innerHTML = '<div class="override-history-item"><div class="override-history-item-text">暂无教师指导</div></div>';
+    return;
+  }
+  list.innerHTML = compact.map(function(item) {
+    var override = normalizeOverridePayload(item);
+    var id = Number(override.id || 0);
+    var questionId = Number(override.question_id || 0);
+    return '<div class="override-history-item" onclick="scrollToOverrideCard(' + id + ', ' + questionId + ')">' +
+      '<div class="override-history-item-title">第 ' + escapeHtml(override.question_id || '-') + ' 题 · ' + escapeHtml(formatFullTime(override.created_at)) + '</div>' +
+      '<div class="override-history-item-text">' + escapeHtml(normalizeMathText(override.content || '教师指导')) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function compactOverrideHistory(overrides) {
+  var map = {};
+  (overrides || []).forEach(function(item) {
+    var override = normalizeOverridePayload(item);
+    var content = normalizeMathText(override.content || '').replace(/\s+/g, ' ').trim();
+    var questionId = override.question_id || '-';
+    var key = questionId + '|' + content;
+    var existing = map[key];
+    if (!existing || new Date(override.created_at || 0) >= new Date(existing.created_at || 0)) {
+      map[key] = override;
+    }
+  });
+  return Object.keys(map).map(function(key) { return map[key]; }).sort(function(a, b) {
+    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+  });
+}
+
+function startHistoryPolling() {
+  if (historyTimer) clearInterval(historyTimer);
+  if (overrideTimer) clearInterval(overrideTimer);
+  historyTimer = setInterval(loadChatHistory, 3000);
+  overrideTimer = setInterval(pollOverrides, 5000);
+}
+
+function escapeHtml(text) {
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(text));
+  return d.innerHTML;
+}
+
+function normalizeMathText(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/\\\(/g, '')
+    .replace(/\\\)/g, '')
+    .replace(/\\\[/g, '')
+    .replace(/\\\]/g, '')
+    .replace(/\$/g, '')
+    .replace(/\\angle\s*/g, '∠')
+    .replace(/\\circ/g, '°')
+    .replace(/\^\{?°\}?/g, '°')
+    .replace(/\\,/g, ' ');
+}
+
+// ====== 启动 ======
+initPage();
+</script>
+</body>
+</html>

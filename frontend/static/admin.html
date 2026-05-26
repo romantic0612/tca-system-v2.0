@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCA-System 管理后台 - 增强版</title>
+<style>
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8f9fa;
+    --color-border-tertiary: #e5e7eb;
+    --color-border-secondary: #d1d5db;
+    --color-text-primary: #333333;
+    --color-text-secondary: #666666;
+    --color-text-tertiary: #9ca3af;
+    --color-c-blue-600: #667eea;
+    --color-c-blue-800: #1e40af;
+    --color-c-blue-50: #eef1ff;
+    --color-c-teal-600: #0d9488;
+    --color-c-coral-600: #e11d48;
+    --color-c-red-600: #dc2626;
+    --color-c-gray-600: #9E9E9E;
+    --color-c-green-600: #059669;
+    --color-c-cyan-600: #00BCD4;
+    --color-c-amber-600: #d97706;
+    --color-c-amber-50: #fffbeb;
+    --color-c-purple-600: #764ba2;
+    --color-c-purple-50: #f3e8ff;
+    --gradient-btn: linear-gradient(135deg, #2E86AB 0%, #4CAF50 100%);
+    --gradient-admin-bg: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
+    --shadow-card: 0 4px 15px rgba(0,0,0,0.1);
+    --shadow-btn: 0 4px 15px rgba(46,134,171,0.3);
+    --shadow-btn-hover: 0 6px 20px rgba(46,134,171,0.4);
+    --shadow-text: 2px 2px 4px rgba(0,0,0,0.2);
+    --border-radius-lg: 20px;
+    --border-radius-md: 12px;
+    --border-radius-sm: 8px;
+    --color-group-sa: #9E9E9E;
+    --color-group-exp: #667eea;
+    --color-group-ai-auto: #00BCD4;
+    --color-group-tca: #764ba2;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--gradient-admin-bg);
+    font-family: var(--font-sans);
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .card {
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid var(--color-border-tertiary);
+    max-width: 1080px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .topbar-title { font-size: 14px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-username { font-size: 12px; color: var(--color-text-secondary); }
+  .topbar-role { font-size: 12px; color: var(--color-c-gray-600); }
+  .topbar-logout { font-size: 12px; color: var(--color-text-tertiary); cursor: pointer; }
+  .topbar-logout:hover { color: var(--color-c-coral-600); }
+
+  /* Tab栏 */
+  .tab-bar {
+    display: flex;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    overflow-x: auto;
+  }
+  .tab-item {
+    padding: 10px 16px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tab-item:hover { color: #667eea; background: #eef1ff; }
+  .tab-item.active { color: #667eea; border-bottom-color: #667eea; font-weight: 600; }
+
+  /* 内容区 */
+  .content { padding: 16px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* 分组管理 */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .section-title { font-size: 15px; font-weight: 600; color: #333; }
+  .btn-primary {
+    padding: 7px 14px;
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: all 0.3s ease;
+    font-family: var(--font-sans);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-btn-hover); }
+  .btn-secondary {
+    padding: 6px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-family: var(--font-sans);
+  }
+  .btn-secondary:hover { background: var(--color-background-secondary); }
+  .btn-success {
+    padding: 7px 14px;
+    background: var(--color-c-green-600);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+
+  /* 数据表格 */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  .data-table th {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 8px 10px;
+    background: var(--color-background-secondary);
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+  }
+  .data-table td {
+    border: 0.5px solid var(--color-border-tertiary);
+    padding: 8px 10px;
+  }
+  .group-tag-tca { color: #764ba2; font-weight: 500; }
+  .group-tag-exp { color: #667eea; font-weight: 500; }
+  .group-tag-sa { color: #9E9E9E; font-weight: 500; }
+  .group-tag-aiauto { color: #00BCD4; font-weight: 500; }
+  .action-link { cursor: pointer; margin-right: 8px; transition: opacity 0.1s; }
+  .action-link.edit { color: var(--color-c-blue-600); }
+  .action-link.delete { color: var(--color-c-red-600); }
+  .action-link:hover { opacity: 0.7; }
+  .account-muted { color: var(--color-text-tertiary); }
+
+  /* 随机分组区域 */
+  .random-assign-section {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+    margin-bottom: 16px;
+    background: var(--color-c-amber-50);
+  }
+  .random-assign-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; color: var(--color-c-amber-600); }
+  .random-assign-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 11px; color: var(--color-text-secondary); }
+  .form-group select, .form-group input {
+    padding: 6px 10px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    background: white;
+  }
+
+  /* 分组统计 */
+  .stats-section {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .stats-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  .stat-card-tca { border-left: 4px solid #764ba2; background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 100%); }
+  .stat-card-exp { border-left: 4px solid #667eea; background: linear-gradient(180deg, #eef1ff 0%, #ffffff 100%); }
+  .stat-card-sa { border-left: 4px solid #9E9E9E; background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%); }
+  .stat-card-aiauto { border-left: 4px solid #00BCD4; background: linear-gradient(180deg, #e0f7fa 0%, #ffffff 100%); }
+  .stat-value { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; }
+
+  /* 批量导入 */
+  .batch-import {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .batch-import-title { font-size: 12px; font-weight: 500; margin-bottom: 8px; }
+  .batch-import-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .file-selector {
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    flex: 1;
+    background: white;
+    cursor: pointer;
+  }
+
+  /* 数据导出 */
+  .export-section {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 14px;
+  }
+  .export-title { font-size: 12px; font-weight: 500; margin-bottom: 8px; }
+  .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .footer {
+    padding: 8px 16px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-align: center;
+  }
+
+  /* 模态框 */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: 28px;
+    width: 440px;
+    max-width: 90vw;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+  }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #333; }
+  .modal-form-group { margin-bottom: 14px; }
+  .modal-form-group label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
+  .modal-form-group input, .modal-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #E8E8E8;
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    outline: none;
+    font-family: var(--font-sans);
+    transition: all 0.3s ease;
+    background: white;
+  }
+  .modal-form-group input:focus, .modal-form-group select:focus {
+    border-color: #2E86AB;
+    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+  }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .btn-cancel {
+    padding: 8px 18px;
+    border: 2px solid #2E86AB;
+    border-radius: var(--border-radius-md);
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2E86AB;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: all 0.3s ease;
+  }
+  .btn-cancel:hover { background: #eef1ff; transform: translateY(-1px); }
+
+  /* 消息提示 */
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #2E86AB, #4CAF50);
+    color: white;
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 2000;
+    display: none;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    animation: slideInFromRight 0.3s ease;
+  }
+  .toast.show { display: block; }
+  .toast.error { background: linear-gradient(135deg, #ff4d4f, #ff7875); }
+  @keyframes slideInFromRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="topbar-title">TCA-System 管理后台</div>
+    <div class="topbar-right">
+      <span class="topbar-username" id="adminUserId">-</span>
+      <span class="topbar-role" id="adminRole">管理端</span>
+      <span class="topbar-logout" onclick="logout()">退出</span>
+    </div>
+  </div>
+
+  <!-- Tab栏 -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab(this, 'groupManage')">分组管理</div>
+    <div class="tab-item" onclick="switchTab(this, 'userManage')">用户管理</div>
+    <div class="tab-item" onclick="switchTab(this, 'dataExport')">数据导出</div>
+    <div class="tab-item" onclick="switchTab(this, 'logView')">日志</div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="content">
+    <!-- 分组管理 -->
+    <div class="tab-content active" id="tab-groupManage">
+      <div class="section-header">
+        <span class="section-title">学生分组管理</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-secondary" onclick="openImportModal()">批量导入</button>
+          <button class="btn-primary" onclick="openNewStudentModal()">+ 新建学生</button>
+        </div>
+      </div>
+
+      <!-- 分组统计 -->
+      <div class="stats-section">
+        <div class="stats-title">分组统计</div>
+        <div class="stats-grid">
+          <div class="stat-card stat-card-sa">
+            <div class="stat-value" id="stat-sa">0</div>
+            <div class="stat-label">SA组</div>
+          </div>
+          <div class="stat-card stat-card-exp">
+            <div class="stat-value" id="stat-exp">0</div>
+            <div class="stat-label">EXP组</div>
+          </div>
+          <div class="stat-card stat-card-tca">
+            <div class="stat-value" id="stat-tca">0</div>
+            <div class="stat-label">TCA组</div>
+          </div>
+          <div class="stat-card stat-card-aiauto">
+            <div class="stat-value" id="stat-aiauto">0</div>
+            <div class="stat-label">AI-AUTO组</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 随机分组 -->
+      <div class="random-assign-section">
+        <div class="random-assign-title">随机分组操作</div>
+        <div class="random-assign-row">
+          <div class="form-group">
+            <label>分组方法</label>
+            <select id="assignMethod">
+              <option value="simple">简单随机分配</option>
+              <option value="block">块随机分配（按班级）</option>
+              <option value="stratified">分层随机分配（按成绩）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>随机种子（可选）</label>
+            <input type="number" id="randomSeed" placeholder="留空则随机" style="width:120px;">
+          </div>
+          <button class="btn-success" onclick="executeRandomAssign()">执行分组</button>
+          <button class="btn-secondary" onclick="clearAssign()">清空分组</button>
+        </div>
+        <div style="margin-top:8px; font-size:11px; color:var(--color-text-tertiary);">
+          说明：简单随机=完全随机分配；块随机=按班级分别随机；分层随机=按前测成绩分层后随机
+        </div>
+      </div>
+
+      <!-- 学生表格 -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>学号</th>
+            <th>姓名</th>
+            <th>班级</th>
+            <th>前测成绩</th>
+            <th>组别</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+      </table>
+
+      <!-- 分组导出 -->
+      <div class="export-section">
+        <div class="export-title">分组数据导出</div>
+        <div class="export-buttons">
+          <button class="btn-secondary" onclick="exportAssignments('csv')">导出分组结果 (CSV)</button>
+          <button class="btn-secondary" onclick="exportExperimentData()">导出实验数据 (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 用户管理 -->
+    <div class="tab-content" id="tab-userManage">
+      <div class="section-header">
+        <span class="section-title">教师账号管理</span>
+        <button class="btn-primary" onclick="openNewTeacherModal()">+ 新建教师</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>工号</th>
+            <th>姓名</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 数据导出 -->
+    <div class="tab-content" id="tab-dataExport">
+      <div class="section-header">
+        <span class="section-title">数据导出</span>
+      </div>
+      <div class="export-section">
+        <div class="export-buttons" style="flex-direction: column; gap: 8px;">
+          <button class="btn-secondary" style="width: fit-content;" onclick="exportAssignments('csv')">导出学生分组 (CSV)</button>
+          <button class="btn-secondary" style="width: fit-content;" onclick="exportExperimentData()">导出实验数据 (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 日志 -->
+    <div class="tab-content" id="tab-logView">
+      <div class="section-header">
+        <span class="section-title">系统操作日志</span>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>操作者</th>
+            <th>操作类型</th>
+            <th>详情</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    TCA-System · 华东师范大学 · v2.0
+  </div>
+</div>
+
+<!-- 新建学生模态框 -->
+<div class="modal-overlay" id="newStudentModal">
+  <div class="modal">
+    <h3>新建学生</h3>
+    <div class="modal-form-group">
+      <label>学号（纯数字）</label>
+      <input type="text" id="newStudentId" placeholder="输入学号" pattern="[0-9]+">
+    </div>
+    <div class="modal-form-group">
+      <label>姓名</label>
+      <input type="text" id="newStudentName" placeholder="输入学生姓名">
+    </div>
+    <div class="modal-form-group">
+      <label>班级</label>
+      <input type="text" id="newStudentClass" placeholder="如：一班">
+    </div>
+    <div class="modal-form-group">
+      <label>前测成绩（可选）</label>
+      <input type="number" id="newStudentScore" placeholder="0-100">
+    </div>
+    <div class="modal-form-group">
+      <label>初始密码</label>
+      <input type="text" value="123456" readonly style="background:#f3f4f6;">
+    </div>
+    <div class="modal-form-group">
+      <label>组别（可选，留空则稍后随机分配）</label>
+      <select id="newStudentGroup">
+        <option value="">不指定</option>
+        <option value="SA">SA</option>
+        <option value="EXP">EXP</option>
+        <option value="TCA">TCA</option>
+        <option value="AI-AUTO">AI-AUTO</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('newStudentModal')">取消</button>
+      <button class="btn-primary" onclick="createStudent()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入模态框 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>批量导入学生</h3>
+    <div class="modal-form-group">
+      <label>选择文件（CSV）</label>
+      <input type="file" id="importFile" accept=".csv" style="padding:6px;">
+    </div>
+    <div style="font-size:11px; color:var(--color-text-tertiary); margin-bottom:12px;">
+      CSV格式要求：第一行为标题，必须包含列：学号、姓名、班级<br>
+      可选列：前测成绩、组别
+    </div>
+    <div class="modal-form-group">
+      <label>导入预览</label>
+      <div id="importPreview" style="border:0.5px solid var(--color-border-tertiary); border-radius:6px; padding:8px; min-height:60px; font-size:11px; color:var(--color-text-tertiary);">
+        选择文件后显示预览...
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="downloadTemplate()">下载模板</button>
+      <button class="btn-cancel" onclick="closeModal('importModal')">取消</button>
+      <button class="btn-primary" onclick="executeImport()">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新建教师模态框 -->
+<div class="modal-overlay" id="newTeacherModal">
+  <div class="modal">
+    <h3>新建教师</h3>
+    <div class="modal-form-group">
+      <label>工号（纯数字）</label>
+      <input type="text" id="newTeacherId" placeholder="输入工号" pattern="[0-9]+">
+    </div>
+    <div class="modal-form-group">
+      <label>姓名</label>
+      <input type="text" id="newTeacherName" placeholder="输入教师姓名">
+    </div>
+    <div class="modal-form-group">
+      <label>角色</label>
+      <select id="newTeacherRole">
+        <option value="teacher">教师</option>
+        <option value="admin_exp">实验管理员</option>
+        <option value="admin_sys">系统管理员</option>
+      </select>
+    </div>
+    <div class="modal-form-group">
+      <label>初始密码</label>
+      <input type="text" id="newTeacherPassword" value="teacher123">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('newTeacherModal')">取消</button>
+      <button class="btn-primary" onclick="createTeacher()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 消息提示 -->
+<div class="toast" id="toast"></div>
+
+<script>
+let students = [];
+let users = [];
+let logs = [];
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+  loadAuthInfo();
+  loadDashboard();
+});
+
+// Tab切换
+function switchTab(el, tabId) {
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+
+function loadDashboard() {
+  fetch('/api/admin/dashboard', { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        showToast(data.error || '管理端数据加载失败', 'error');
+        return;
+      }
+      students = data.students || [];
+      users = data.users || [];
+      logs = data.logs || [];
+      updateStats(data.stats);
+      updateTable();
+      updateUserTable();
+      updateLogTable();
+    })
+    .catch(() => showToast('管理端数据加载失败', 'error'));
+}
+
+function loadAuthInfo() {
+  fetch('/api/auth/check', { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.logged_in || !['admin_exp', 'admin_sys'].includes(data.role)) {
+        window.location.href = '/login.html';
+        return;
+      }
+      const roleMap = { admin_exp: '实验管理员', admin_sys: '系统管理员' };
+      document.getElementById('adminUserId').textContent = data.user_id;
+      document.getElementById('adminRole').textContent = roleMap[data.role] || data.role;
+    })
+    .catch(() => window.location.href = '/login.html');
+}
+
+function logout() {
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    .finally(() => window.location.href = '/login.html');
+}
+
+// 更新统计
+function updateStats(serverStats) {
+  const counts = serverStats || {SA: 0, EXP: 0, TCA: 0, 'AI-AUTO': 0};
+  document.getElementById('stat-sa').textContent = counts.SA;
+  document.getElementById('stat-exp').textContent = counts.EXP;
+  document.getElementById('stat-tca').textContent = counts.TCA;
+  document.getElementById('stat-aiauto').textContent = counts['AI-AUTO'];
+}
+
+// 更新表格
+function updateTable() {
+  const tbody = document.getElementById('studentTableBody');
+  if (!students.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-text-tertiary);">数据库暂无学生</td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map(s => `
+    <tr>
+      <td>${escapeHtml(s.student_id)}</td>
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.class_id || '-')}</td>
+      <td>${s.pretest_score ?? '-'}</td>
+      <td>${s.experiment_group ? `<span class="group-tag-${s.experiment_group.toLowerCase().replace('-','')}">${s.experiment_group}</span>` : '<span style="color:var(--color-text-tertiary);">未分配</span>'}</td>
+      <td style="color:${s.experiment_group ? 'var(--color-c-green-600)' : 'var(--color-c-amber-600)'};">${s.status || (s.experiment_group ? '已分配' : '待分配')}</td>
+      <td>
+        <span class="action-link edit" onclick="editStudent('${s.student_id}')">编辑</span>
+        <span class="action-link delete" onclick="deleteStudent('${s.student_id}')">删除</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateUserTable() {
+  const tbody = document.getElementById('userTableBody');
+  const managedUsers = users.filter(u => u.role !== 'student');
+  if (!managedUsers.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-tertiary);">数据库暂无教师或管理员</td></tr>';
+    return;
+  }
+  const roleMap = { teacher: '教师', admin_exp: '实验管理员', admin_sys: '系统管理员' };
+  tbody.innerHTML = managedUsers.map(u => `
+    <tr>
+      <td>${u.user_id}</td>
+      <td>-</td>
+      <td>${roleMap[u.role] || u.role}</td>
+      <td style="color:var(--color-c-green-600);">${u.status || '正常'}</td>
+      <td><span class="account-muted">来自数据库</span></td>
+    </tr>
+  `).join('');
+}
+
+function updateLogTable() {
+  const tbody = document.getElementById('logTableBody');
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--color-text-tertiary);">数据库暂无操作日志</td></tr>';
+    return;
+  }
+  tbody.innerHTML = logs.map(log => `
+    <tr>
+      <td>${log.created_at || '-'}</td>
+      <td>${log.actor || '-'}</td>
+      <td>${log.action_type || '-'}</td>
+      <td>${log.detail || '-'}</td>
+    </tr>
+  `).join('');
+}
+
+// 执行随机分组
+function executeRandomAssign() {
+  const method = document.getElementById('assignMethod').value;
+  const seed = document.getElementById('randomSeed').value;
+  
+  if (students.length === 0) {
+    showToast('没有学生数据，请先导入学生', 'error');
+    return;
+  }
+
+  fetch('/api/admin/students/assignments', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({ method: method, seed: seed || null })
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '批量分组失败', 'error');
+      return;
+    }
+    showToast(`批量分组完成，已更新 ${resp.updated} 名学生`);
+    loadDashboard();
+  }).catch(() => showToast('批量分组失败', 'error'));
+}
+
+// 清空分组
+function clearAssign() {
+  if (!confirm('确定要清空所有分组吗？')) return;
+  fetch('/api/admin/students/assignments/clear', {
+    method: 'POST',
+    credentials: 'include'
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '清空分组失败', 'error');
+      return;
+    }
+    showToast(`已清空 ${resp.updated} 名学生分组`);
+    loadDashboard();
+  }).catch(() => showToast('清空分组失败', 'error'));
+}
+
+// 模态框操作
+function openNewStudentModal() {
+  document.getElementById('newStudentModal').classList.add('show');
+}
+
+function openImportModal() {
+  document.getElementById('importModal').classList.add('show');
+}
+
+function openNewTeacherModal() {
+  document.getElementById('newTeacherModal').classList.add('show');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// 点击遮罩关闭
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+
+// 创建学生
+function createStudent() {
+  const id = document.getElementById('newStudentId').value;
+  const name = document.getElementById('newStudentName').value;
+  const cls = document.getElementById('newStudentClass').value;
+  const score = document.getElementById('newStudentScore').value;
+  const group = document.getElementById('newStudentGroup').value;
+  
+  if (!id || !name) {
+    showToast('学号和姓名不能为空', 'error');
+    return;
+  }
+  
+  if (!/^\d+$/.test(id)) {
+    showToast('学号必须是纯数字', 'error');
+    return;
+  }
+  
+  if (students.find(s => String(s.student_id) === String(id))) {
+    showToast('学号已存在', 'error');
+    return;
+  }
+  
+  fetch('/api/admin/students', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({
+      student_id: id,
+      name: name,
+      class_id: cls,
+      pretest_score: score || null,
+      experiment_group: group || null,
+      password: '123456'
+    })
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '学生创建失败', 'error');
+      return;
+    }
+    closeModal('newStudentModal');
+    showToast('学生创建成功');
+    document.getElementById('newStudentId').value = '';
+    document.getElementById('newStudentName').value = '';
+    document.getElementById('newStudentClass').value = '';
+    document.getElementById('newStudentScore').value = '';
+    document.getElementById('newStudentGroup').value = '';
+    loadDashboard();
+  }).catch(() => showToast('学生创建失败', 'error'));
+}
+
+// 创建教师
+function createTeacher() {
+  const id = document.getElementById('newTeacherId').value;
+  const role = document.getElementById('newTeacherRole').value;
+  const password = document.getElementById('newTeacherPassword').value || 'teacher123';
+  if (!id || !/^\d+$/.test(id)) {
+    showToast('工号必须是纯数字', 'error');
+    return;
+  }
+  fetch('/api/admin/teachers', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({user_id: id, role: role, password: password})
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '教师创建失败', 'error');
+      return;
+    }
+    closeModal('newTeacherModal');
+    showToast('教师创建成功');
+    document.getElementById('newTeacherId').value = '';
+    document.getElementById('newTeacherName').value = '';
+    document.getElementById('newTeacherPassword').value = 'teacher123';
+    loadDashboard();
+  }).catch(() => showToast('教师创建失败', 'error'));
+}
+
+// 编辑学生
+function editStudent(id) {
+  const student = students.find(s => String(s.student_id) === String(id));
+  if (!student) {
+    showToast('学生不存在', 'error');
+    return;
+  }
+  const name = prompt('姓名', student.name || '');
+  if (name === null) return;
+  const classId = prompt('班级', student.class_id || '');
+  if (classId === null) return;
+  const score = prompt('前测成绩（留空表示无）', student.pretest_score ?? '');
+  if (score === null) return;
+  const group = prompt('组别（SA/EXP/TCA/AI-AUTO，留空表示未分配）', student.experiment_group || '');
+  if (group === null) return;
+
+  fetch('/api/admin/students/' + encodeURIComponent(id), {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    credentials: 'include',
+    body: JSON.stringify({
+      name: name,
+      class_id: classId,
+      pretest_score: score || null,
+      experiment_group: group || null
+    })
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '学生更新失败', 'error');
+      return;
+    }
+    showToast('学生更新成功');
+    loadDashboard();
+  }).catch(() => showToast('学生更新失败', 'error'));
+}
+
+// 删除学生
+function deleteStudent(id) {
+  const student = students.find(s => String(s.student_id) === String(id));
+  const label = student ? `${student.name}（${id}）` : id;
+  if (!confirm(`确定删除学生 ${label} 吗？相关答题、聊天、触发和干预记录也会删除。`)) return;
+  fetch('/api/admin/students/' + encodeURIComponent(id), {
+    method: 'DELETE',
+    credentials: 'include'
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '学生删除失败', 'error');
+      return;
+    }
+    showToast('学生删除成功');
+    loadDashboard();
+  }).catch(() => showToast('学生删除失败', 'error'));
+}
+
+// 下载模板
+function downloadTemplate() {
+  const template = '学号,姓名,班级,前测成绩,组别\n';
+  const blob = new Blob([template], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '学生导入模板.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('模板下载成功');
+}
+
+// 执行导入
+function executeImport() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) {
+    showToast('请选择文件', 'error');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  fetch('/api/admin/students/import', {
+    method: 'POST',
+    credentials: 'include',
+    body: formData
+  }).then(r => r.json()).then(resp => {
+    if (!resp.success) {
+      showToast(resp.error || '批量导入失败', 'error');
+      return;
+    }
+    const errors = resp.errors || [];
+    const summary = `导入完成：成功 ${resp.success_count ?? ((resp.created || 0) + (resp.updated || 0))}，新增 ${resp.created || 0}，更新 ${resp.updated || 0}，失败 ${resp.failed_count ?? (resp.failed || 0)}`;
+    if (errors.length) {
+      document.getElementById('importPreview').innerHTML =
+        `<div style="color:#111827;margin-bottom:6px;">${escapeHtml(summary)}</div>` +
+        `<div style="max-height:120px;overflow:auto;color:#dc2626;">` +
+        errors.map(err => `第 ${escapeHtml(err.row)} 行：${escapeHtml(err.error)}`).join('<br>') +
+        `</div>`;
+      showToast('导入完成，但存在失败行', 'error');
+    } else {
+      closeModal('importModal');
+      document.getElementById('importFile').value = '';
+      document.getElementById('importPreview').innerHTML = '选择文件后显示预览...';
+      showToast(summary);
+    }
+    loadDashboard();
+  }).catch(() => showToast('批量导入失败', 'error'));
+}
+
+// 导出分组
+function exportAssignments(format) {
+  window.location.href = '/api/admin/export/assignments.csv';
+}
+
+function exportExperimentData() {
+  window.location.href = '/api/admin/export/experiment-data.csv';
+}
+
+// 消息提示
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+// 文件选择监听
+document.getElementById('importFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.getElementById('importPreview').innerHTML = `已选择: ${file.name}<br>大小: ${(file.size / 1024).toFixed(2)} KB`;
+  }
+});
+</script>
+</body>
+</html>

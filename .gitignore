@@ -1,0 +1,17 @@
+.env*
+!.env.example
+*.db
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+reports/
+release/
+_server_snapshots/
+*.zip
+*.tar.gz
+*.log
+.DS_Store
+.vscode/
+.idea/
+frontend/vue-app/node_modules/
