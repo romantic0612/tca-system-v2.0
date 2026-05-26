@@ -19,6 +19,29 @@ from backend.core.database.schema import get_connection
 
 teacher_bp = Blueprint('teacher', __name__)
 
+QUESTION_BANK = {
+    1: {'text': '选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
+    2: {'text': '选择题：请根据题干选择正确选项。（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
+    3: {'text': '已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。', 'knowledge_point': '三角形内角和'},
+    4: {'text': '三角形三个内角的和是多少度？', 'knowledge_point': '三角形内角和'},
+    5: {'text': '选择题：请选择正确选项。（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
+    6: {'text': '应用题：请写出你的推理过程。', 'knowledge_point': '数学推理'},
+    7: {'text': '计算题：请完成本题并填写最终答案。', 'knowledge_point': '计算能力'},
+    8: {'text': '综合题：请根据题意给出答案。', 'knowledge_point': '综合应用'},
+    9: {'text': '请完成当前题目。', 'knowledge_point': '综合应用'},
+    10: {'text': '请完成当前题目。', 'knowledge_point': '综合应用'},
+}
+
+
+def get_question_info(question_id):
+    question_id = int(question_id or 1)
+    info = QUESTION_BANK.get(question_id, {'text': '请完成当前题目。', 'knowledge_point': '待补充'})
+    return {
+        'question_id': question_id,
+        'text': info['text'],
+        'knowledge_point': info['knowledge_point'],
+    }
+
 
 @teacher_bp.route('/intervene', methods=['POST'])
 def intervene():
@@ -363,26 +386,14 @@ def get_event_detail():
             trigger = cursor.fetchone()
 
         cursor.execute('''
-            SELECT agent_name, message_type, content, created_at
+            SELECT agent_name, message_type, content, created_at, question_id, override_id
             FROM chat_messages
-            WHERE student_id = ? AND (? IS NULL OR question_id = ?)
+            WHERE student_id = ? AND question_id = ?
             ORDER BY created_at ASC
             LIMIT 50
-        ''', (student_id, active_question, active_question))
+        ''', (student_id, active_question))
         rows = cursor.fetchall()
         message_question_id = active_question
-        if not rows:
-            cursor.execute('''
-                SELECT agent_name, message_type, content, created_at, question_id
-                FROM chat_messages
-                WHERE student_id = ?
-                ORDER BY created_at DESC
-                LIMIT 50
-            ''', (student_id,))
-            fallback_rows = list(reversed(cursor.fetchall()))
-            rows = fallback_rows
-            if fallback_rows:
-                message_question_id = fallback_rows[-1]['question_id'] or active_question
 
         messages = [
             {
@@ -390,10 +401,22 @@ def get_event_detail():
                 'type': row['message_type'],
                 'content': row['content'],
                 'time': row['created_at'],
-                'question_id': row['question_id'] if 'question_id' in row.keys() else message_question_id,
+                'question_id': row['question_id'],
+                'override_id': row['override_id'],
             }
             for row in rows
         ]
+
+        cursor.execute('''
+            SELECT id, teacher_id, override_type, intervention_type, content,
+                   question_id, created_at, status, trigger_event_id, feedback, feedback_at
+            FROM teacher_overrides
+            WHERE student_id = ?
+              AND teacher_id != 0
+              AND question_id = ?
+            ORDER BY created_at ASC
+        ''', (student_id, active_question))
+        overrides = [dict(row) for row in cursor.fetchall()]
 
         conn.close()
 
@@ -418,10 +441,12 @@ def get_event_detail():
                 'last_trigger_level': student['last_trigger_level'],
             },
             'question_id': message_question_id,
+            'question': get_question_info(message_question_id),
             'evaluation': dict(evaluation) if evaluation else None,
             'trigger': dict(trigger) if trigger else None,
             'diagnosis': diagnosis,
             'messages': messages,
+            'overrides': overrides,
         })
 
     except Exception as e:

@@ -395,6 +395,13 @@
     margin-top: 4px;
     text-align: center;
   }
+  .question-text {
+    font-size: 12px;
+    color: #374151;
+    margin-top: 6px;
+    text-align: center;
+    line-height: 1.5;
+  }
 
   .chat-history {
     flex: 1;
@@ -417,6 +424,74 @@
   }
   .chat-line.system {
     color: var(--color-c-amber-600);
+  }
+  .history-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+  .history-toggle {
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 999px;
+    background: white;
+    color: var(--color-c-blue-600);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 3px 10px;
+    font-family: var(--font-sans);
+  }
+  .history-message {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: white;
+    color: #374151;
+  }
+  .history-message.student {
+    margin-left: 18%;
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+  }
+  .history-message.agent {
+    margin-right: 10%;
+    background: #f8fafc;
+  }
+  .history-message.teacher {
+    border-left: 3px solid var(--color-c-amber-600);
+    background: #fffbeb;
+  }
+  .history-message.system {
+    background: #f9fafb;
+    color: var(--color-text-secondary);
+  }
+  .history-message-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .history-role {
+    font-weight: 600;
+    color: #111827;
+  }
+  .history-content {
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .teacher-tag {
+    display: inline-block;
+    margin-right: 5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 600;
   }
   .diagnosis-card {
     border: 0.5px solid var(--color-border-tertiary);
@@ -501,9 +576,13 @@
   .btn-intervene.keep {
     background: white;
   }
-  .btn-intervene.intervene {
+  .btn-intervene.hint {
     background: var(--color-c-amber-50);
     border-color: var(--color-c-amber-200);
+  }
+  .btn-intervene.switch {
+    background: #fef2f2;
+    border-color: #fecdd3;
   }
   .intervention-form {
     display: flex;
@@ -593,6 +672,12 @@
     color: var(--color-text-secondary);
     line-height: 1.8;
   }
+  .log-entry.live {
+    color: var(--color-c-teal-600);
+  }
+  .log-entry.intervene {
+    color: var(--color-c-amber-600);
+  }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.72; }
@@ -677,6 +762,7 @@
           <button class="nav-arrow" onclick="navigateQuestion(1)">&gt;</button>
         </div>
         <div class="question-meta" id="detailMeta">知识点: — | 状态: 待观察</div>
+        <div class="question-text" id="detailQuestionText">选择学生后显示当前题目。</div>
       </div>
 
       <!-- 对话历史（可折叠） -->
@@ -697,19 +783,29 @@
         <div class="intervention-body">
           <div class="intervention-buttons">
             <button class="btn-intervene keep" onclick="keepCurrent()">🟢 保持现状</button>
-            <button class="btn-intervene intervene" onclick="sendIntervention()">🔴 干预</button>
+            <button class="btn-intervene hint" onclick="sendQuickHint()">🟡 给个提示</button>
+            <button class="btn-intervene switch" onclick="switchToTutor()">🔴 切换讲解(→Tutor)</button>
           </div>
           <div class="intervention-form">
             <div class="select-group">
               <label>切换至</label>
-              <select>
+              <select id="targetAgentSelect">
                 <option>Guide</option>
                 <option selected>Tutor</option>
+              </select>
+              <label style="margin-top: 8px;">解释模板</label>
+              <select id="overrideTemplateSelect" onchange="applyOverrideTemplate()">
+                <option value="">自定义</option>
+                <option value="step_hint">分步提示</option>
+                <option value="relation">关系提示</option>
+                <option value="formula">公式提示</option>
+                <option value="redirect">换个思路</option>
+                <option value="encourage">鼓励提示</option>
               </select>
             </div>
             <div class="text-group">
               <label>解释/提示文本</label>
-              <textarea class="intervention-textarea" placeholder="输入要发送给学生的解释或提示...">注意已知条件中两个角的关系，想想它们加起来是多少度？</textarea>
+              <textarea class="intervention-textarea" id="interventionTextarea" placeholder="输入要发送给学生的解释或提示...">先把已知条件写出来：∠A=50°、∠B=70°，再想三角形三个内角的和。</textarea>
             </div>
             <div class="send-btn-group">
               <button class="btn-send-intervene" onclick="sendIntervention()">发送</button>
@@ -745,6 +841,29 @@ var wsClient = null;
 var pendingCount = 0;
 var pendingKeys = {};
 var latestTriggerEventId = null;
+var detailPollTimer = null;
+var helpPollTimer = null;
+var historyExpanded = false;
+var currentDetailData = null;
+var overrideTemplates = {
+  step_hint: '先把已知条件写出来：∠A=50°、∠B=70°，再想三角形三个内角的和。',
+  relation: '两个已知角先相加，再用180°减去它们的和。',
+  formula: '可以列式：∠C = 180° - ∠A - ∠B。',
+  redirect: '如果卡住了，先回答：三角形三个角加起来是多少度？',
+  encourage: '你已经找到关键信息了，下一步只需要把已知角相加再相减。'
+};
+var fallbackQuestions = {
+  1: { text: '选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
+  2: { text: '选择题：请根据题干选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
+  3: { text: '已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。', knowledge_point: '三角形内角和' },
+  4: { text: '三角形三个内角的和是多少度？', knowledge_point: '三角形内角和' },
+  5: { text: '选择题：请选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
+  6: { text: '应用题：请写出你的推理过程。', knowledge_point: '数学推理' },
+  7: { text: '计算题：请完成本题并填写最终答案。', knowledge_point: '计算能力' },
+  8: { text: '综合题：请根据题意给出答案。', knowledge_point: '综合应用' },
+  9: { text: '请完成当前题目。', knowledge_point: '综合应用' },
+  10: { text: '请完成当前题目。', knowledge_point: '综合应用' }
+};
 
 // ====== 页面初始化 ======
 function initPage() {
@@ -769,6 +888,7 @@ function initPage() {
           selectStudent(studentData[0].user_id, true);
         }
         loadHelpRequests();
+        startPollingFallback();
       }
     })
     .catch(function(err) {
@@ -799,7 +919,10 @@ function initWebSocket() {
       trigger_event_id: data.trigger_event_id,
       raw: data
     });
-    addLog('学生 ' + (data.student_name || data.student_id) + ' ' + (data.action || '状态更新'));
+    addLog('学生 ' + (data.student_name || data.student_id) + ' ' + (data.action || '状态更新'), 'live');
+    if (Number(data.student_id) === Number(selectedStudentId)) {
+      loadStudentHistory(selectedStudentId, currentDetailQ, true);
+    }
   });
   wsClient.on('help_request', function(data) {
     addPendingItem({
@@ -812,7 +935,11 @@ function initWebSocket() {
       trigger_event_id: data.trigger_event_id,
       raw: data
     });
-    addLog('收到学生 ' + (data.student_name || data.student_id) + ' 的求助');
+    addLog('收到学生 ' + (data.student_name || data.student_id) + ' 的求助', 'live');
+    if (Number(data.student_id) === Number(selectedStudentId)) {
+      currentDetailQ = Number(data.question_id || currentDetailQ);
+      loadStudentHistory(selectedStudentId, currentDetailQ, true);
+    }
   });
   wsClient.connect();
 }
@@ -929,26 +1056,42 @@ function renderEventDetail(data, item) {
   currentDetailQ = data.question_id || item.question_id || currentDetailQ;
   totalQuestions = student.total_questions || totalQuestions;
   latestTriggerEventId = item.trigger_event_id || (data.trigger && data.trigger.id) || null;
+  currentDetailData = data;
+  renderDetailHeader(data, item);
+  renderSessionDetail(data, item);
+}
+
+function renderDetailHeader(data, item) {
+  var student = data.student || {};
+  var question = data.question || getQuestionInfo(data.question_id || currentDetailQ);
+  var evaluation = data.evaluation || null;
+  var trigger = data.trigger || null;
+  var statusText = '待提交';
+  var scoreText = '评分: —';
+  if (evaluation) {
+    scoreText = '评分: ' + (evaluation.score !== null && evaluation.score !== undefined ? evaluation.score + '/100' : '—');
+    statusText = evaluation.is_correct ? '正确' : '需关注';
+  } else if (data.messages && data.messages.length > 0) {
+    statusText = '对话中';
+  }
+  var triggerText = trigger && trigger.trigger_level ? trigger.trigger_level : (student.last_trigger_level || '—');
+  var errorType = evaluation ? (evaluation.error_type || '-') : (student.last_error_type || '-');
 
   document.getElementById('detailName').textContent = student.student_name || item.student_name || selectedStudentId;
   document.getElementById('detailMode').textContent = (student.experiment_group || '-') + '组 · ' + (student.current_agent || 'Guide');
   document.getElementById('detailHelpRemain').textContent = student.experiment_group === 'TCA' ? '可接收教师干预' : '非TCA组';
   document.getElementById('detailQNumber').textContent = '第 ' + currentDetailQ + ' 题 / 共 ' + totalQuestions + ' 题';
-
-  if (data.evaluation) {
-    document.getElementById('detailScore').textContent = '评分: ' + data.evaluation.score + '/100';
-    document.getElementById('detailStatus').textContent = data.evaluation.is_correct ? '(正确)' : '(需关注)';
-    document.getElementById('detailMeta').textContent = '错误类型: ' + (data.evaluation.error_type || '-') + ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1);
-  } else {
-    document.getElementById('detailScore').textContent = '评分: —';
-    document.getElementById('detailStatus').textContent = '(待观察)';
-    document.getElementById('detailMeta').textContent = '触发: ' + (data.trigger ? data.trigger.trigger_level : '-') + ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1);
-  }
-
-  renderDiagnosis(data, item);
+  document.getElementById('detailScore').textContent = scoreText;
+  document.getElementById('detailStatus').textContent = '(' + statusText + ')';
+  document.getElementById('detailMeta').textContent = '知识点: ' + (question.knowledge_point || '-') +
+    ' | 状态: ' + statusText +
+    ' | 错误类型: ' + errorType +
+    ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1) +
+    ' | 触发: ' + triggerText;
+  document.getElementById('detailQuestionText').textContent = question.text || '请完成当前题目。';
 }
 
-function renderDiagnosis(data, item) {
+function renderSessionDetail(data, item) {
   var body = document.getElementById('chatHistoryBody');
   if (!body) return;
   var lines = [];
@@ -976,7 +1119,8 @@ function renderDiagnosis(data, item) {
   };
   var suggestion = evaluation.suggestion || '建议查看学生当前题目的作答和对话，再决定是否发送提示或切换 Tutor。';
 
-  lines.push(
+  if (data.trigger || data.evaluation || item.trigger_event_id) {
+    lines.push(
     '<div class="diagnosis-card">' +
       '<div class="diagnosis-title">需要关注：' + escapeHtml(item.desc || '系统检测到学生可能需要帮助') + '</div>' +
       '<div class="diagnosis-row"><strong>学生：</strong>' + escapeHtml(student.student_name || item.student_name || item.student_id || '-') + '　<strong>组别：</strong>' + escapeHtml(student.experiment_group || '-') + '　<strong>当前模式：</strong>' + escapeHtml(student.current_agent || 'Guide') + '</div>' +
@@ -986,18 +1130,67 @@ function renderDiagnosis(data, item) {
       '<div class="diagnosis-tags">' + tags.map(function(tag) { return '<span class="diagnosis-tag">' + escapeHtml(tag) + '</span>'; }).join('') + '</div>' +
       '<details class="raw-diagnosis"><summary>查看技术诊断</summary><pre>' + escapeHtml(JSON.stringify(diagnosis || {}, null, 2)) + '</pre></details>' +
     '</div>'
-  );
-
-  if (data.messages && data.messages.length > 0) {
-    lines.push('<div class="chat-line system">最近对话</div>');
-    data.messages.forEach(function(m) {
-      var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-      lines.push('<div class="chat-line">' + escapeHtml(formatMessageTime(m.time) + ' · ' + who + ': ' + normalizeMathText(m.content)) + '</div>');
-    });
-  } else {
-    lines.push('<div class="chat-line system">该题暂无对话历史。</div>');
+    );
   }
+
+  lines = lines.concat(buildHistoryCards(data.messages || [], data.overrides || []));
   body.innerHTML = lines.join('');
+}
+
+function buildHistoryCards(messages, overrides) {
+  var combined = [];
+  messages.forEach(function(m) {
+    combined.push({
+      kind: m.type === 'teacher' ? 'teacher' : (m.type === 'user' ? 'student' : (m.type === 'assistant' ? 'agent' : 'system')),
+      role: m.type === 'user' ? '学生' : (m.type === 'teacher' ? '教师指导' : (m.agent || '系统')),
+      time: m.time,
+      content: m.content,
+      question_id: m.question_id,
+      override_id: m.override_id
+    });
+  });
+  overrides.forEach(function(o) {
+    var exists = combined.some(function(m) { return m.override_id && Number(m.override_id) === Number(o.id); });
+    if (!exists) {
+      combined.push({
+        kind: 'teacher',
+        role: '教师指导',
+        time: o.created_at,
+        content: o.content,
+        question_id: o.question_id,
+        override_id: o.id,
+        intervention_type: o.intervention_type
+      });
+    }
+  });
+  combined.sort(function(a, b) {
+    return new Date(a.time || 0).getTime() - new Date(b.time || 0).getTime();
+  });
+  if (!combined.length) {
+    return ['<div class="chat-line system">该题暂无对话历史。</div>'];
+  }
+  var visible = historyExpanded ? combined : combined.slice(Math.max(0, combined.length - 5));
+  var html = [];
+  if (combined.length > 5) {
+    html.push('<div class="history-toolbar"><button class="history-toggle" onclick="toggleHistoryExpanded()">' + (historyExpanded ? '只看最近5条' : '展开全部 ' + combined.length + ' 条') + '</button></div>');
+  }
+  visible.forEach(function(m) {
+    html.push(renderHistoryCard(m));
+  });
+  return html;
+}
+
+function renderHistoryCard(m) {
+  var teacherTag = m.kind === 'teacher' ? '<span class="teacher-tag">教师指导 · 第 ' + escapeHtml(m.question_id || currentDetailQ) + ' 题</span>' : '';
+  return '<div class="history-message ' + escapeHtml(m.kind) + '">' +
+    '<div class="history-message-meta"><span class="history-role">' + teacherTag + escapeHtml(m.role || '-') + '</span><span>' + escapeHtml(formatMessageTime(m.time)) + '</span></div>' +
+    '<div class="history-content">' + escapeHtml(normalizeMathText(m.content || '')) + '</div>' +
+  '</div>';
+}
+
+function toggleHistoryExpanded() {
+  historyExpanded = !historyExpanded;
+  if (currentDetailData) renderSessionDetail(currentDetailData, { student_id: selectedStudentId, question_id: currentDetailQ });
 }
 
 // ====== 渲染学生列表 ======
@@ -1088,34 +1281,32 @@ function navigateQuestion(delta) {
 }
 
 function updateDetailUI() {
+  var question = getQuestionInfo(currentDetailQ);
   document.getElementById('detailQNumber').textContent = '第 ' + currentDetailQ + ' 题 / 共 ' + totalQuestions + ' 题';
   document.getElementById('detailScore').textContent = '评分: —';
   document.getElementById('detailStatus').textContent = '(待观察)';
-  document.getElementById('detailMeta').textContent = '知识点: — | 状态: 待提交';
+  document.getElementById('detailMeta').textContent = '知识点: ' + question.knowledge_point + ' | 状态: 待提交';
+  document.getElementById('detailQuestionText').textContent = question.text;
 }
 
-function loadStudentHistory(userId, questionId) {
+function loadStudentHistory(userId, questionId, silent) {
   var body = document.getElementById('chatHistoryBody');
   if (!body) return;
-  body.innerHTML = '<div class="chat-line system">正在加载对话历史...</div>';
+  if (!silent) body.innerHTML = '<div class="chat-line system">正在加载对话历史...</div>';
   var params = new URLSearchParams();
   params.set('student_id', userId);
   if (questionId) params.set('question_id', questionId);
   fetch(API_BASE + '/api/teacher/event-detail?' + params.toString(), { credentials: 'include' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.success || !data.messages || data.messages.length === 0) {
-        body.innerHTML = '<div class="chat-line system">该学生暂无可显示对话历史。</div>';
+      if (!data.success) {
+        body.innerHTML = '<div class="chat-line system">对话历史加载失败。</div>';
         return;
       }
       if (data.question_id) {
         currentDetailQ = data.question_id;
-        updateDetailUI();
       }
-      body.innerHTML = data.messages.map(function(m) {
-        var who = m.type === 'user' ? '学生' : (m.agent || 'AI');
-        return '<div class="chat-line">' + escapeHtml(formatMessageTime(m.time) + ' · ' + who + ': ' + normalizeMathText(m.content)) + '</div>';
-      }).join('');
+      renderEventDetail(data, { student_id: userId, question_id: currentDetailQ });
     })
     .catch(function() {
       body.innerHTML = '<div class="chat-line system">对话历史加载失败。</div>';
@@ -1144,10 +1335,34 @@ function toggleCollapse(sectionId) {
   }
 }
 
-// ====== 干预操作（预留API接口） ======
-function sendIntervention() {
-  var selectEl = document.querySelector('.intervention-form select');
-  var textareaEl = document.querySelector('.intervention-textarea');
+// ====== 干预操作 ======
+function applyOverrideTemplate() {
+  var selectEl = document.getElementById('overrideTemplateSelect');
+  var textareaEl = document.getElementById('interventionTextarea');
+  if (!selectEl || !textareaEl) return;
+  var text = overrideTemplates[selectEl.value];
+  if (text) textareaEl.value = text;
+}
+
+function sendQuickHint() {
+  var selectEl = document.getElementById('targetAgentSelect');
+  var textareaEl = document.getElementById('interventionTextarea');
+  if (selectEl) selectEl.value = 'Guide';
+  if (textareaEl && !textareaEl.value.trim()) textareaEl.value = overrideTemplates.step_hint;
+  sendIntervention('scaffold');
+}
+
+function switchToTutor() {
+  var selectEl = document.getElementById('targetAgentSelect');
+  var textareaEl = document.getElementById('interventionTextarea');
+  if (selectEl) selectEl.value = 'Tutor';
+  if (textareaEl && !textareaEl.value.trim()) textareaEl.value = overrideTemplates.relation;
+  sendIntervention('switch_tutor');
+}
+
+function sendIntervention(interventionType) {
+  var selectEl = document.getElementById('targetAgentSelect');
+  var textareaEl = document.getElementById('interventionTextarea');
   if (!selectEl || !textareaEl) return;
   var targetMode = selectEl.value;
   var content = textareaEl.value.trim();
@@ -1156,8 +1371,9 @@ function sendIntervention() {
 
   var data = {
     student_id: selectedStudentId,
+    question_id: currentDetailQ,
     target_agent: targetMode,
-    intervention_type: 'manual_override',
+    intervention_type: interventionType || 'manual_override',
     trigger_event_id: latestTriggerEventId,
     content: content
   };
@@ -1169,25 +1385,33 @@ function sendIntervention() {
   }).then(function(r) { return r.json(); })
     .then(function(resp) {
       if (resp.success) {
-        alert('干预已发送');
-        addLog('干预 [' + targetMode + '] 内容已发送');
+        addLog('第 ' + currentDetailQ + ' 题干预 [' + targetMode + '] 内容已发送', 'intervene');
+        loadStudentHistory(selectedStudentId, currentDetailQ, true);
       } else {
         alert('发送失败: ' + (resp.error || '未知错误'));
       }
     })
     .catch(function() {
-      // 后端API未实现时本地模拟
-      alert('干预已发送（离线模式）');
-      addLog('干预 [' + targetMode + '] 内容已发送（离线）');
+      alert('干预发送失败，请稍后重试');
+      addLog('干预发送失败：网络错误', 'intervene');
     });
-  textareaEl.value = '';
 }
 
 // "保持现状"按钮
 function keepCurrent() {
   if (!selectedStudentId) { alert('请先选择一个学生'); return; }
-  alert('已保持现状');
-  addLog('保持现状');
+  addLog('第 ' + currentDetailQ + ' 题保持现状', 'intervene');
+  clearPendingForSelection();
+}
+
+function clearPendingForSelection() {
+  var items = Array.prototype.slice.call(document.querySelectorAll('.pending-item'));
+  items.forEach(function(el) {
+    var item = el.pendingItem || {};
+    if (Number(item.student_id) === Number(selectedStudentId) && (!item.question_id || Number(item.question_id) === Number(currentDetailQ))) {
+      ignorePendingItem(el);
+    }
+  });
 }
 
 // "全部已读"
@@ -1205,13 +1429,24 @@ function markAllRead() {
   updatePendingTitle();
 }
 
-function addLog(text) {
+function startPollingFallback() {
+  if (helpPollTimer) clearInterval(helpPollTimer);
+  if (detailPollTimer) clearInterval(detailPollTimer);
+  helpPollTimer = setInterval(loadHelpRequests, 5000);
+  detailPollTimer = setInterval(function() {
+    if (selectedStudentId) loadStudentHistory(selectedStudentId, currentDetailQ, true);
+  }, 5000);
+}
+
+function addLog(text, type) {
   var body = document.querySelector('.log-body');
   if (!body) return;
+  var waiting = body.querySelector('.log-entry');
+  if (waiting && waiting.textContent === '等待实时事件...') body.innerHTML = '';
   var now = new Date();
   var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   var div = document.createElement('div');
-  div.className = 'log-entry';
+  div.className = 'log-entry' + (type ? ' ' + type : '');
   div.textContent = time + ' → ' + text;
   body.appendChild(div);
   body.scrollTop = body.scrollHeight;
@@ -1235,6 +1470,10 @@ function normalizeMathText(text) {
     .replace(/\\circ/g, '°')
     .replace(/\^\{?°\}?/g, '°')
     .replace(/\\,/g, ' ');
+}
+
+function getQuestionInfo(questionId) {
+  return fallbackQuestions[Number(questionId)] || { text: '请完成当前题目。', knowledge_point: '待补充' };
 }
 
 function formatMessageTime(timeValue) {
