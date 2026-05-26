@@ -86,6 +86,21 @@ def intervene():
         
         conn = get_connection()
         cursor = conn.cursor()
+
+        cursor.execute(
+            'SELECT student_name, experiment_group FROM student_assignments WHERE student_id = ?',
+            (student_id,),
+        )
+        assignment = cursor.fetchone()
+        if not assignment:
+            conn.close()
+            return jsonify({'success': False, 'error': '学生不存在'}), 404
+        if assignment['experiment_group'] != 'TCA':
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': '非TCA组仅可观察，不允许教师干预',
+            }), 403
         
         cursor.execute(
             'SELECT current_agent FROM student_states WHERE student_id = ?',

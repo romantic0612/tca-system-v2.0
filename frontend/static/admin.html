@@ -414,6 +414,7 @@
         <div class="export-title">分组数据导出</div>
         <div class="export-buttons">
           <button class="btn-secondary" onclick="exportAssignments('csv')">导出分组结果 (CSV)</button>
+          <button class="btn-secondary" onclick="exportExperimentData()">导出实验数据 (CSV)</button>
         </div>
       </div>
     </div>
@@ -446,6 +447,7 @@
       <div class="export-section">
         <div class="export-buttons" style="flex-direction: column; gap: 8px;">
           <button class="btn-secondary" style="width: fit-content;" onclick="exportAssignments('csv')">导出学生分组 (CSV)</button>
+          <button class="btn-secondary" style="width: fit-content;" onclick="exportExperimentData()">导出实验数据 (CSV)</button>
         </div>
       </div>
     </div>
@@ -930,10 +932,21 @@ function executeImport() {
       showToast(resp.error || '批量导入失败', 'error');
       return;
     }
-    closeModal('importModal');
-    document.getElementById('importFile').value = '';
-    document.getElementById('importPreview').innerHTML = '选择文件后显示预览...';
-    showToast(`导入完成：新增 ${resp.created}，更新 ${resp.updated}，失败 ${resp.failed}`);
+    const errors = resp.errors || [];
+    const summary = `导入完成：成功 ${resp.success_count ?? ((resp.created || 0) + (resp.updated || 0))}，新增 ${resp.created || 0}，更新 ${resp.updated || 0}，失败 ${resp.failed_count ?? (resp.failed || 0)}`;
+    if (errors.length) {
+      document.getElementById('importPreview').innerHTML =
+        `<div style="color:#111827;margin-bottom:6px;">${escapeHtml(summary)}</div>` +
+        `<div style="max-height:120px;overflow:auto;color:#dc2626;">` +
+        errors.map(err => `第 ${escapeHtml(err.row)} 行：${escapeHtml(err.error)}`).join('<br>') +
+        `</div>`;
+      showToast('导入完成，但存在失败行', 'error');
+    } else {
+      closeModal('importModal');
+      document.getElementById('importFile').value = '';
+      document.getElementById('importPreview').innerHTML = '选择文件后显示预览...';
+      showToast(summary);
+    }
     loadDashboard();
   }).catch(() => showToast('批量导入失败', 'error'));
 }
@@ -941,6 +954,10 @@ function executeImport() {
 // 导出分组
 function exportAssignments(format) {
   window.location.href = '/api/admin/export/assignments.csv';
+}
+
+function exportExperimentData() {
+  window.location.href = '/api/admin/export/experiment-data.csv';
 }
 
 // 消息提示

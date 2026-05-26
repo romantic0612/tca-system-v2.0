@@ -282,11 +282,20 @@ def import_students():
     created = 0
     updated = 0
     errors = []
+    seen_ids = set()
 
     for index, row in enumerate(rows, start=2):
         try:
             raw_id = pick(row, '学号', 'student_id', '账号')
-            student_id = int(str(raw_id or '').strip())
+            raw_id_text = str(raw_id or '').strip()
+            if not raw_id_text.isdigit():
+                raise ValueError('学号必须是纯数字')
+            if len(raw_id_text) < 6 or len(raw_id_text) > 12:
+                raise ValueError('学号长度应为 6-12 位数字')
+            student_id = int(raw_id_text)
+            if student_id in seen_ids:
+                raise ValueError('CSV中存在重复学号')
+            seen_ids.add(student_id)
             name = (pick(row, '姓名', 'student_name', 'name') or '').strip()
             if not name:
                 raise ValueError('姓名不能为空')
@@ -331,6 +340,8 @@ def import_students():
 
     return jsonify({
         'success': True,
+        'success_count': created + updated,
+        'failed_count': len(errors),
         'created': created,
         'updated': updated,
         'failed': len(errors),
@@ -498,4 +509,88 @@ def export_assignments_csv():
         output.getvalue(),
         mimetype='text/csv; charset=utf-8',
         headers={'Content-Disposition': 'attachment; filename=assignments.csv'},
+    )
+
+
+@admin_bp.route('/export/experiment-data.csv', methods=['GET'])
+def export_experiment_data_csv():
+    if not require_admin():
+        return forbidden()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    sections = []
+
+    def add_section(title, headers, sql):
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        sections.append((title, headers, rows))
+
+    add_section(
+        'students',
+        ['student_id', 'student_name', 'class_id', 'pretest_score', 'experiment_group', 'current_question', 'total_questions'],
+        '''
+        SELECT student_id, student_name, class_id, pretest_score, experiment_group,
+               current_question, total_questions
+        FROM student_assignments
+        ORDER BY student_id
+        ''',
+    )
+    add_section(
+        'chat_messages',
+        ['id', 'student_id', 'agent_name', 'message_type', 'content', 'question_id', 'override_id', 'created_at'],
+        '''
+        SELECT id, student_id, agent_name, message_type, content, question_id, override_id, created_at
+        FROM chat_messages
+        ORDER BY created_at, id
+        ''',
+    )
+    add_section(
+        'evaluation_records',
+        ['id', 'student_id', 'question_id', 'student_answer', 'standard_answer', 'is_correct', 'error_type', 'score', 'confidence', 'key_mistake', 'suggestion', 'evaluated_at'],
+        '''
+        SELECT id, student_id, question_id, student_answer, standard_answer, is_correct,
+               error_type, score, confidence, key_mistake, suggestion, evaluated_at
+        FROM evaluation_records
+        ORDER BY evaluated_at, id
+        ''',
+    )
+    add_section(
+        'trigger_events',
+        ['id', 'student_id', 'trigger_level', 'error_type', 'error_streak_value', 'stagnation_seconds', 'detected_keywords', 'trigger_strength', 'diagnosis_result', 'created_at'],
+        '''
+        SELECT id, student_id, trigger_level, error_type, error_streak_value,
+               stagnation_seconds, detected_keywords, trigger_strength, diagnosis_result, created_at
+        FROM trigger_events
+        ORDER BY created_at, id
+        ''',
+    )
+    add_section(
+        'teacher_overrides',
+        ['id', 'student_id', 'teacher_id', 'override_type', 'intervention_type', 'content', 'question_id', 'trigger_event_id', 'status', 'created_at'],
+        '''
+        SELECT id, student_id, teacher_id, override_type, intervention_type, content,
+               question_id, trigger_event_id, status, created_at
+        FROM teacher_overrides
+        ORDER BY created_at, id
+        ''',
+    )
+
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    for index, (title, headers, rows) in enumerate(sections):
+        if index:
+            writer.writerow([])
+        writer.writerow([f'[{title}]'])
+        writer.writerow(headers)
+        for row in rows:
+            writer.writerow([row[header] for header in headers])
+
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=experiment-data.csv'},
     )

@@ -731,10 +731,41 @@ def get_student_list():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'SELECT sa.student_id, sa.student_name, sa.class_id, sa.experiment_group, '
-            'sa.current_question, sa.total_questions, u.created_at '
-            'FROM student_assignments sa JOIN users u ON sa.student_id = u.user_id '
-            'ORDER BY sa.student_id'
+            '''
+            SELECT
+                sa.student_id,
+                sa.student_name,
+                sa.class_id,
+                sa.experiment_group,
+                sa.current_question,
+                sa.total_questions,
+                u.created_at,
+                COALESCE(ss.current_agent, 'Guide') AS current_agent,
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM teacher_overrides to2
+                    WHERE to2.student_id = sa.student_id
+                      AND to2.status = 'help_request'
+                ), 0) AS pending_count,
+                (
+                    SELECT cm.content
+                    FROM chat_messages cm
+                    WHERE cm.student_id = sa.student_id
+                    ORDER BY cm.created_at DESC, cm.id DESC
+                    LIMIT 1
+                ) AS last_message,
+                (
+                    SELECT cm.created_at
+                    FROM chat_messages cm
+                    WHERE cm.student_id = sa.student_id
+                    ORDER BY cm.created_at DESC, cm.id DESC
+                    LIMIT 1
+                ) AS last_activity
+            FROM student_assignments sa
+            JOIN users u ON sa.student_id = u.user_id
+            LEFT JOIN student_states ss ON sa.student_id = ss.student_id
+            ORDER BY sa.student_id
+            '''
         )
         students = []
         for row in cursor.fetchall():
@@ -748,7 +779,11 @@ def get_student_list():
                 'condition': row[3],
                 'current_question': row[4] or 1,
                 'total_questions': row[5] or 10,
-                'created_at': row[6]
+                'created_at': row[6],
+                'current_agent': row[7] or 'Guide',
+                'pending_count': row[8] or 0,
+                'last_message': row[9],
+                'last_activity': row[10],
             })
         conn.close()
         return jsonify({'success': True, 'students': students, 'total': len(students)})

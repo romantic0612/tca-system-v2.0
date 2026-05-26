@@ -305,6 +305,22 @@
     color: var(--color-text-secondary);
     margin-top: 2px;
   }
+  .student-meta-line {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .student-pending-dot {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: var(--color-c-red-600);
+    line-height: 1.5;
+  }
   .btn-detail {
     font-size: 11px;
     padding: 4px 10px;
@@ -573,6 +589,13 @@
   .btn-intervene:hover {
     border-color: var(--color-c-blue-400);
   }
+  .btn-intervene:disabled,
+  .btn-send-intervene:disabled,
+  .select-group select:disabled,
+  .intervention-textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
   .btn-intervene.keep {
     background: white;
   }
@@ -658,6 +681,20 @@
     transform: translateY(-1px);
     box-shadow: var(--shadow-btn-hover);
   }
+  .permission-note {
+    display: none;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 0.5px solid var(--color-c-amber-200);
+    border-radius: var(--border-radius-md);
+    background: var(--color-c-amber-50);
+    color: var(--color-c-amber-800);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .permission-note.show {
+    display: block;
+  }
 
   .log-section {
     flex-shrink: 0;
@@ -677,6 +714,36 @@
   }
   .log-entry.intervene {
     color: var(--color-c-amber-600);
+  }
+  .notification-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    background: #f8fafc;
+    flex-shrink: 0;
+  }
+  .notification-bar.show {
+    display: flex;
+  }
+  .notification-main {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .notification-main strong {
+    color: var(--color-c-red-600);
+    margin-right: 6px;
+  }
+  .notification-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
   }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -811,6 +878,7 @@
               <button class="btn-send-intervene" onclick="sendIntervention()">发送</button>
             </div>
           </div>
+          <div class="permission-note" id="permissionNote">该学生为非 TCA 组：教师端仅观察，不发送 Override。</div>
         </div>
       </div>
 
@@ -825,6 +893,8 @@
       </div>
     </div>
   </div>
+
+  <div class="notification-bar" id="notificationBar"></div>
 
   <div class="footer">
     TCA-System · 华东师范大学 · v2.0
@@ -845,6 +915,8 @@ var detailPollTimer = null;
 var helpPollTimer = null;
 var historyExpanded = false;
 var currentDetailData = null;
+var notificationItems = {};
+var currentSelectedStudent = null;
 var overrideTemplates = {
   step_hint: '先把已知条件写出来：∠A=50°、∠B=70°，再想三角形三个内角的和。',
   relation: '两个已知角先相加，再用180°减去它们的和。',
@@ -909,7 +981,15 @@ function initWebSocket() {
       var keywords = trigger.diagnosis.L2.detected_keywords || [];
       itemDesc = '检测到求助关键词' + (keywords.length ? '：' + keywords.join('、') : '') + (isTca ? '' : '（非TCA组，仅观察）');
     }
-    addPendingItem({
+    updateStudentRealtime({
+      student_id: data.student_id,
+      question_id: data.current_question,
+      last_message: data.action || '状态更新',
+      last_activity: data.timestamp,
+      pending_delta: l2Triggered ? 1 : 0,
+      current_agent: data.current_agent
+    });
+    var pendingKey = addPendingItem({
       type: itemType,
       student_id: data.student_id,
       student_name: data.student_name || data.student_id,
@@ -919,13 +999,28 @@ function initWebSocket() {
       trigger_event_id: data.trigger_event_id,
       raw: data
     });
+    if (pendingKey) showNotification(pendingKey, {
+      type: itemType,
+      student_id: data.student_id,
+      student_name: data.student_name || data.student_id,
+      question_id: data.current_question,
+      desc: itemDesc,
+      trigger_event_id: data.trigger_event_id
+    });
     addLog('学生 ' + (data.student_name || data.student_id) + ' ' + (data.action || '状态更新'), 'live');
     if (Number(data.student_id) === Number(selectedStudentId)) {
       loadStudentHistory(selectedStudentId, currentDetailQ, true);
     }
   });
   wsClient.on('help_request', function(data) {
-    addPendingItem({
+    updateStudentRealtime({
+      student_id: data.student_id,
+      question_id: data.question_id,
+      last_message: data.content || '学生请求帮助',
+      last_activity: data.timestamp,
+      pending_delta: 1
+    });
+    var pendingKey = addPendingItem({
       type: '主动求助',
       student_id: data.student_id,
       student_name: data.student_name || data.student_id,
@@ -934,6 +1029,14 @@ function initWebSocket() {
       urgent: true,
       trigger_event_id: data.trigger_event_id,
       raw: data
+    });
+    if (pendingKey) showNotification(pendingKey, {
+      type: '主动求助',
+      student_id: data.student_id,
+      student_name: data.student_name || data.student_id,
+      question_id: data.question_id,
+      desc: data.content || '学生请求帮助',
+      trigger_event_id: data.trigger_event_id
     });
     addLog('收到学生 ' + (data.student_name || data.student_id) + ' 的求助', 'live');
     if (Number(data.student_id) === Number(selectedStudentId)) {
@@ -946,9 +1049,9 @@ function initWebSocket() {
 
 function addPendingItem(item) {
   var body = document.getElementById('pendingBody');
-  if (!body) return;
+  if (!body) return null;
   var key = pendingItemKey(item);
-  if (pendingKeys[key]) return;
+  if (pendingKeys[key]) return null;
   pendingKeys[key] = true;
   var empty = document.getElementById('pendingEmpty');
   if (empty) empty.remove();
@@ -971,11 +1074,73 @@ function addPendingItem(item) {
     openPendingDetail(div.pendingItem);
   });
   body.insertBefore(div, body.firstChild);
+  return key;
 }
 
 function updatePendingTitle() {
   var title = document.getElementById('pendingTitle');
   if (title) title.textContent = '▾ 待处理请求 (' + pendingCount + ')';
+}
+
+function showNotification(key, item) {
+  var bar = document.getElementById('notificationBar');
+  if (!bar || !key || !item) return;
+  notificationItems[key] = item;
+  var type = item.type || '实时事件';
+  var q = item.question_id ? '第 ' + item.question_id + ' 题' : '当前题';
+  bar.className = 'notification-bar show';
+  bar.innerHTML =
+    '<div class="notification-main"><strong>' + escapeHtml(type) + '</strong>' +
+    escapeHtml(item.student_name || item.student_id || '未知学生') + ' · ' +
+    escapeHtml(q) + ' · ' + escapeHtml(item.desc || '有新的学生动态') +
+    '</div><div class="notification-actions">' +
+    '<button class="btn-sm" onclick="viewNotification(\'' + escapeHtml(key) + '\')">查看详情</button>' +
+    '<button class="btn-sm" onclick="ignoreNotification(\'' + escapeHtml(key) + '\')">忽略</button>' +
+    '</div>';
+}
+
+function viewNotification(key) {
+  var item = notificationItems[key];
+  if (!item) return;
+  openPendingDetail(item);
+  ignoreNotification(key, true);
+}
+
+function ignoreNotification(key, keepPending) {
+  delete notificationItems[key];
+  var bar = document.getElementById('notificationBar');
+  if (bar) {
+    bar.className = 'notification-bar';
+    bar.innerHTML = '';
+  }
+  if (!keepPending) {
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('.pending-item'));
+    nodes.forEach(function(node) {
+      if (node.pendingKey === key) ignorePendingItem(node);
+    });
+  }
+}
+
+function updateStudentRealtime(info) {
+  if (!info || !info.student_id) return;
+  var changed = false;
+  studentData.forEach(function(s) {
+    if (Number(s.user_id) !== Number(info.student_id)) return;
+    if (info.question_id) s.current_question = Number(info.question_id);
+    if (info.current_agent) s.current_agent = info.current_agent;
+    if (info.last_message) s.last_message = info.last_message;
+    if (info.last_activity) s.last_activity = info.last_activity;
+    if (info.pending_count !== undefined && info.pending_count !== null) {
+      s.pending_count = Number(info.pending_count || 0);
+    } else if (info.pending_delta) {
+      s.pending_count = Number(s.pending_count || 0) + Number(info.pending_delta || 0);
+    }
+    changed = true;
+  });
+  if (changed) {
+    renderStudentList();
+    highlightSelectedStudent();
+  }
 }
 
 function loadHelpRequests() {
@@ -984,7 +1149,14 @@ function loadHelpRequests() {
     .then(function(data) {
       if (!data.success) return;
       data.requests.slice().reverse().forEach(function(item) {
-        addPendingItem({
+        updateStudentRealtime({
+          student_id: item.student_id,
+          question_id: item.question_id,
+          last_message: item.content,
+          last_activity: item.created_at,
+          pending_count: null
+        });
+        var key = addPendingItem({
           type: '主动求助',
           request_id: item.id,
           student_id: item.student_id,
@@ -994,6 +1166,15 @@ function loadHelpRequests() {
           urgent: true,
           trigger_event_id: item.trigger_event_id,
           raw: item
+        });
+        if (key) showNotification(key, {
+          type: '主动求助',
+          student_id: item.student_id,
+          student_name: item.student_name || item.student_id,
+          question_id: item.question_id,
+          desc: item.content,
+          request_id: item.id,
+          trigger_event_id: item.trigger_event_id
         });
       });
     })
@@ -1010,6 +1191,10 @@ function ignorePendingItem(element) {
     }).catch(function() {});
   }
   if (element.pendingKey) delete pendingKeys[element.pendingKey];
+  updateStudentRealtime({
+    student_id: item.student_id,
+    pending_delta: -1
+  });
   element.remove();
   pendingCount = Math.max(pendingCount - 1, 0);
   updatePendingTitle();
@@ -1057,6 +1242,17 @@ function renderEventDetail(data, item) {
   totalQuestions = student.total_questions || totalQuestions;
   latestTriggerEventId = item.trigger_event_id || (data.trigger && data.trigger.id) || null;
   currentDetailData = data;
+  currentSelectedStudent = {
+    user_id: student.student_id,
+    student_id: student.student_id,
+    name: student.student_name,
+    condition: student.experiment_group,
+    experiment_group: student.experiment_group,
+    current_agent: student.current_agent,
+    current_question: currentDetailQ,
+    total_questions: totalQuestions
+  };
+  applyInterventionPermission(currentSelectedStudent);
   renderDetailHeader(data, item);
   renderSessionDetail(data, item);
 }
@@ -1079,7 +1275,7 @@ function renderDetailHeader(data, item) {
 
   document.getElementById('detailName').textContent = student.student_name || item.student_name || selectedStudentId;
   document.getElementById('detailMode').textContent = (student.experiment_group || '-') + '组 · ' + (student.current_agent || 'Guide');
-  document.getElementById('detailHelpRemain').textContent = student.experiment_group === 'TCA' ? '可接收教师干预' : '非TCA组';
+  document.getElementById('detailHelpRemain').textContent = student.experiment_group === 'TCA' ? '可接收教师干预' : '仅观察，不可干预';
   document.getElementById('detailQNumber').textContent = '第 ' + currentDetailQ + ' 题 / 共 ' + totalQuestions + ' 题';
   document.getElementById('detailScore').textContent = scoreText;
   document.getElementById('detailStatus').textContent = '(' + statusText + ')';
@@ -1089,6 +1285,31 @@ function renderDetailHeader(data, item) {
     ' | 错误累计: ' + Number(student.error_streak || 0).toFixed(1) +
     ' | 触发: ' + triggerText;
   document.getElementById('detailQuestionText').textContent = question.text || '请完成当前题目。';
+}
+
+function applyInterventionPermission(student) {
+  var group = (student && (student.condition || student.experiment_group)) || '';
+  var allowed = group === 'TCA';
+  var controls = document.querySelectorAll('.btn-intervene, .btn-send-intervene, #targetAgentSelect, #overrideTemplateSelect, #interventionTextarea');
+  controls.forEach(function(control) {
+    control.disabled = !allowed;
+  });
+  var note = document.getElementById('permissionNote');
+  if (note) {
+    note.className = 'permission-note' + (allowed ? '' : ' show');
+    note.textContent = allowed ? '' : '该学生为非 TCA 组：教师端仅观察，不发送 Override。';
+  }
+  var help = document.getElementById('detailHelpRemain');
+  if (help) help.textContent = allowed ? '可接收教师干预' : '仅观察，不可干预';
+}
+
+function selectedStudentCanIntervene() {
+  var student = currentSelectedStudent;
+  if (!student && selectedStudentId) {
+    student = studentData.find(function(s) { return Number(s.user_id) === Number(selectedStudentId); });
+  }
+  var group = student && (student.condition || student.experiment_group);
+  return group === 'TCA';
 }
 
 function renderSessionDetail(data, item) {
@@ -1211,19 +1432,26 @@ function renderStudentList() {
     var badgeClass = 'badge-' + s.condition.toLowerCase().replace('-', '');
     var colorMap = { 'TCA': '#7C3AED', 'SA': '#6B7280', 'AI-AUTO': '#059669', 'EXP': '#2563EB' };
     var color = colorMap[s.condition] || '#6B7280';
-    html += '<div class="student-item" onclick="selectStudent(' + s.user_id + ')">';
+    var pending = Number(s.pending_count || 0);
+    var lastMsg = s.last_message ? normalizeMathText(s.last_message) : '暂无消息';
+    var activeTime = s.last_activity ? formatMessageTime(s.last_activity) : '暂无活动';
+    html += '<div class="student-item" data-student-id="' + escapeHtml(s.user_id) + '" onclick="selectStudent(' + s.user_id + ')">';
     html += '<div class="student-item-left">';
     html += '<div class="student-item-row">';
     html += '<span class="agent-icon" style="color: ' + color + ';">🟢</span>';
     html += '<span class="student-name">' + escapeHtml(s.name || s.user_id) + '</span>';
     html += '<span class="question-badge ' + badgeClass + '">' + (s.current_question || 1) + '/' + (s.total_questions || totalQuestions) + '</span>';
+    if (pending > 0) html += '<span class="student-pending-dot">待处理 ' + pending + '</span>';
     html += '</div>';
-    html += '<div class="student-preview">' + escapeHtml(s.condition) + '组</div>';
+    html += '<div class="student-preview">' + escapeHtml(s.condition) + '组 · ' + escapeHtml(s.current_agent || 'Guide') + ' · 第' + escapeHtml(s.current_question || 1) + '题</div>';
+    html += '<div class="student-meta-line">' + escapeHtml(lastMsg) + '</div>';
+    html += '<div class="student-meta-line">上次活动：' + escapeHtml(activeTime) + '</div>';
     html += '</div>';
     html += '<button class="btn-detail" onclick="event.stopPropagation();selectStudent(' + s.user_id + ')">详情</button>';
     html += '</div>';
   });
   container.innerHTML = html;
+  highlightSelectedStudent();
 }
 
 function updateStudentSummary() {
@@ -1238,37 +1466,31 @@ function updateStudentSummary() {
 // ====== 选中学生 ======
 function selectStudent(userId, silent) {
   selectedStudentId = userId;
-  // 高亮
-  var items = document.querySelectorAll('.student-item');
-  items.forEach(function(item) { item.style.background = ''; });
-  // 找到对应的DOM元素
-  var allItems = document.getElementById('studentListBody').children;
-  for (var i = 0; i < allItems.length; i++) {
-    if (allItems[i].classList.contains('student-item')) {
-      allItems[i].style.background = '';
-    }
-  }
-  // 查找当前点击的项
-  var evt = silent ? null : (event || window.event);
-  if (evt && evt.target) {
-    var el = evt.target.closest ? evt.target.closest('.student-item') : null;
-    if (el) el.style.background = '#eff6ff';
-  }
+  highlightSelectedStudent();
 
   // 更新右侧详情
   var student = null;
   for (var i = 0; i < studentData.length; i++) {
-    if (studentData[i].user_id === userId) { student = studentData[i]; break; }
+    if (Number(studentData[i].user_id) === Number(userId)) { student = studentData[i]; break; }
   }
   if (student) {
+    currentSelectedStudent = student;
     document.getElementById('detailName').textContent = student.name || student.user_id;
-    document.getElementById('detailMode').textContent = student.condition + '组 · Guide';
+    document.getElementById('detailMode').textContent = student.condition + '组 · ' + (student.current_agent || 'Guide');
     currentDetailQ = student.current_question || 1;
     totalQuestions = student.total_questions || totalQuestions;
     document.getElementById('detailHelpRemain').textContent = student.condition === 'TCA' ? '可接收教师干预' : '非TCA组';
+    applyInterventionPermission(student);
   }
   updateDetailUI();
   loadStudentHistory(userId, currentDetailQ);
+}
+
+function highlightSelectedStudent() {
+  var items = document.querySelectorAll('.student-item');
+  items.forEach(function(item) {
+    item.style.background = Number(item.getAttribute('data-student-id')) === Number(selectedStudentId) ? '#eff6ff' : '';
+  });
 }
 
 // ====== 题目导航 ======
@@ -1368,6 +1590,11 @@ function sendIntervention(interventionType) {
   var content = textareaEl.value.trim();
   if (!content) { alert('请输入干预内容'); return; }
   if (!selectedStudentId) { alert('请先选择一个学生'); return; }
+  if (!selectedStudentCanIntervene()) {
+    alert('该学生为非 TCA 组：教师端仅观察，不允许发送 Override。');
+    addLog('非TCA组学生仅观察，已阻止干预发送', 'intervene');
+    return;
+  }
 
   var data = {
     student_id: selectedStudentId,
@@ -1386,6 +1613,19 @@ function sendIntervention(interventionType) {
     .then(function(resp) {
       if (resp.success) {
         addLog('第 ' + currentDetailQ + ' 题干预 [' + targetMode + '] 内容已发送', 'intervene');
+        showNotification('intervene:' + resp.override_id, {
+          type: '干预已发送',
+          student_id: selectedStudentId,
+          student_name: (currentSelectedStudent && (currentSelectedStudent.name || currentSelectedStudent.student_name)) || selectedStudentId,
+          question_id: currentDetailQ,
+          desc: content
+        });
+        updateStudentRealtime({
+          student_id: selectedStudentId,
+          last_message: content,
+          last_activity: new Date().toISOString(),
+          current_agent: targetMode
+        });
         loadStudentHistory(selectedStudentId, currentDetailQ, true);
       } else {
         alert('发送失败: ' + (resp.error || '未知错误'));
