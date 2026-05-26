@@ -45,7 +45,8 @@
     display: flex;
     justify-content: center;
     padding: 16px;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
   }
   .card {
     background: var(--color-background-primary);
@@ -53,7 +54,8 @@
     border: 0.5px solid var(--color-border-tertiary);
     max-width: 1280px;
     width: 100%;
-    min-height: calc(100vh - 32px);
+    height: calc(100vh - 32px);
+    min-height: 0;
     overflow: hidden;
     box-shadow: var(--shadow-teacher-card);
     display: flex;
@@ -96,7 +98,7 @@
 
   .main-layout {
     display: flex;
-    min-height: 640px;
+    min-height: 0;
     flex: 1;
   }
 
@@ -106,6 +108,7 @@
     border-right: 0.5px solid var(--color-border-tertiary);
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   /* 可折叠区域通用 */
@@ -257,10 +260,13 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
   .student-list-body {
     overflow-y: auto;
+    overscroll-behavior: contain;
     flex: 1;
+    min-height: 0;
   }
   .student-item {
     padding: 10px 12px;
@@ -319,6 +325,7 @@
     width: 60%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .student-info-bar {
@@ -398,9 +405,10 @@
   }
   .chat-history-body {
     padding: 8px 14px;
-    max-height: 160px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     flex: 1;
+    min-height: 0;
   }
   .chat-line {
     font-size: 12px;
