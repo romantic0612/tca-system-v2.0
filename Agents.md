@@ -1,5 +1,106 @@
 # TCA-System V2.0 项目说明
 
+## 2026-05-26 最新演示版本说明
+
+当前版本已经可以作为队长/组长阶段性演示版本使用。演示主线是：
+
+```text
+学生答题/聊天 -> 系统评估与触发 -> 教师端实时提醒 -> TCA 教师 Override -> 学生端接收指导 -> 管理端导出实验数据
+```
+
+本轮新增演示材料：
+
+- `reports/TCA-System-demo-highlights-20260526.docx`
+  - 给队长看的图文说明文档。
+  - 包含项目简介、当前亮点、演示路径、学生端/教师端/管理端截图、验收清单和关键改动文件。
+  - 注意：`reports/` 默认不进 GitHub，用于本地汇报材料。
+
+本轮关键代码修改：
+
+- `backend/api/teacher.py`
+  - `/api/teacher/intervene` 增加 TCA 权限校验。
+  - 只有 TCA 组学生允许教师发送 Override。
+  - SA、EXP、AI-AUTO 组学生后端返回拒绝，避免只靠前端禁用造成权限漏洞。
+- `backend/api/student.py`
+  - `/api/student/list` 增加教师端需要的状态字段：
+    - `current_agent`
+    - `pending_count`
+    - `last_message`
+    - `last_activity`
+  - 教师端学生列表可以展示当前 Agent、待处理标记、最后消息和上次活动时间。
+- `backend/api/admin.py`
+  - 批量导入学生增强校验：
+    - 学号非数字
+    - 学号长度异常
+    - CSV 内重复学号
+    - 姓名为空
+    - 组别非法
+    - 前测成绩不在 0-100
+  - `/api/admin/students/import` 响应新增：
+    - `success_count`
+    - `failed_count`
+    - `errors`
+  - 新增实验数据导出接口：
+    - `GET /api/admin/export/experiment-data.csv`
+    - 导出学生分组、聊天记录、评估记录、触发事件、教师干预记录。
+- `frontend/static/teacher.html`
+  - 增加教师端全局实时通知条。
+  - 通知支持“查看详情”和“忽略”。
+  - 学生列表增强展示：
+    - 当前组别
+    - 当前 Agent
+    - 当前题号
+    - 待处理数量
+    - 最后消息
+    - 上次活动时间
+  - TCA 组显示完整干预面板并允许发送。
+  - 非 TCA 组显示“仅观察，不可干预”，禁用干预按钮和输入框。
+  - 修复学生列表排序，TCA 组优先显示。
+- `frontend/static/admin.html`
+  - 批量导入后，如果有失败行，会在导入预览区域显示每行失败原因。
+  - 新增“导出实验数据 (CSV)”按钮。
+- `test_product_flows.py`
+  - 新增产品链路测试：
+    - 学生求助 -> 教师看到请求和详情 -> TCA 教师干预 -> 学生收到 Override。
+    - SA / EXP / AI-AUTO 非 TCA 组无法被教师干预。
+    - 管理端导入合法/非法 CSV 行，返回明确错误。
+    - 管理端可导出实验数据 CSV。
+
+当前可以实现和展示的功能：
+
+| 模块 | 当前能力 | 如何体现 |
+|:---|:---|:---|
+| 学生端 | 学生答题、与 Guide/Tutor 对话、TCA 组查看教师指导入口 | 登录 `20240003 / 123456`，进入学生端查看题目、对话框和“教师指导”入口 |
+| 智能规则 | Evaluator 规则评估、错误累计、L1/L2/L3 触发、AI-AUTO 自动切换、TCA 教师提醒 | 学生发送“我不会”等求助词，教师端出现待处理请求和诊断信息 |
+| 教师端监控 | 查看所有学生状态、最后消息、上次活动、当前题号、当前 Agent、待处理数量 | 登录 `100001 / teacher123`，查看教师端左侧学生列表 |
+| TCA Override | 教师对 TCA 组学生发送提示或切换 Tutor，学生端实时收到 | 教师端选中王芳/TCA，发送提示；学生端出现教师指导 |
+| 权限边界 | 教师可观察所有学生，但只能干预 TCA 组 | 教师端选中张明/SA，干预面板禁用并显示“仅观察，不可干预” |
+| 管理端 | 学生分组、批量导入、学生编辑删除、导出分组/实验数据 | 登录 `900001 / admin123`，查看管理端分组、导入和导出按钮 |
+| 实验数据导出 | 导出学生、聊天、评估、触发、教师干预核心数据 | 管理端点击“导出实验数据 (CSV)”或访问 `/api/admin/export/experiment-data.csv` |
+| 部署 | Docker 云端部署，GitHub 主线同步 | 服务器执行 `git pull` 后 `docker compose up -d --build` |
+
+本轮验证命令：
+
+```bash
+python test_flask.py
+python test_websocket.py
+python test_product_flows.py
+```
+
+已验证结果：
+
+- Flask 基础路由和默认账号通过。
+- WebSocket 事件注册和连接测试通过。
+- 产品链路测试通过。
+- 教师端、管理端静态页面 JavaScript 语法检查通过。
+
+仍然暂缓或后续继续做的内容：
+
+- 题库表和题目从数据库读取：本阶段继续使用内置默认题库，不影响当前演示。
+- Vue3 + Element Plus 完整重构：目前保留为 V2.0 前端工程方向，云端仍默认运行 `frontend/static` 产品页。
+- 更细的 EXP 解释模板库：当前已有通用提示，后续可按题型和错误类型扩充。
+- 多人正式实验数据库：SQLite 对本地和小规模演示够用，正式多人并发建议后续迁移 MySQL/PostgreSQL。
+
 ## 最新部署策略：云端默认运行产品演示版
 
 当前项目按“产品先可用”的策略调整部署方式：

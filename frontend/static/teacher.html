@@ -1426,7 +1426,9 @@ function renderStudentList() {
   // 条件显示顺序：TCA → SA → AI-AUTO → EXP
   var order = { 'TCA': 0, 'SA': 1, 'AI-AUTO': 2, 'EXP': 3 };
   var sorted = studentData.slice().sort(function(a, b) {
-    return (order[a.condition] || 99) - (order[b.condition] || 99);
+    var aOrder = Object.prototype.hasOwnProperty.call(order, a.condition) ? order[a.condition] : 99;
+    var bOrder = Object.prototype.hasOwnProperty.call(order, b.condition) ? order[b.condition] : 99;
+    return aOrder - bOrder;
   });
   sorted.forEach(function(s) {
     var badgeClass = 'badge-' + s.condition.toLowerCase().replace('-', '');
