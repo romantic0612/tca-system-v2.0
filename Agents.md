@@ -757,3 +757,32 @@ python test_websocket.py
 ## 一句话状态总结
 
 当前系统已经从“页面骨架”推进到“数据库驱动 + 管理端批量数据维护 + 规则智能评估 + ECNU LLM 可配置接入 + 教师可控干预 + Docker 部署资料齐备”的可演示原型；剩余重点主要是云服务器联调、端口/环境变量配置，以及按队长反馈继续细化 Prompt 和实验数据字段。
+# 2026-05-27 生产分支智能链路更新
+
+本文件顶部记录 150 生产线最新状态，后面的历史段落可能包含早期编码问题，仅作旧记录参考。
+
+## 150 当前已补齐内容
+
+- 统一三层规则入口：`backend/core/intelligence.py` 是运行时唯一实现，`backend/core/trigger_rules.py` 和 `backend/core/trigger_engine.py` 只做兼容导出，不再维护两套并行逻辑。
+- 新增正式 Evaluator 位置：`agents/evaluator.py`，支持本地等价判定、非答案过滤、ECNU LLM JSON 评估和规则兜底。
+- Prompt 去重：Guide、Tutor、Evaluator Prompt 统一放在 `agents/prompt_templates.py`。
+- 结构化等价性判定：`60`、`60°`、数值等价答案会先由本地规则判定，减少 LLM 误判。
+- 置信度联动：`confidence` 会传入触发引擎，低置信度时提高 L1 阈值，降低误触发风险。
+- 主动求助消歧：`我不会`、`帮帮我` 会触发 L2；`我并不是不会`、`不用帮我，我再试试` 不触发 L2。
+- L3 停滞阈值调整为中等题 60 秒，并保留简单题 30 秒、难题 120 秒的扩展入口。
+- 后端核心智能链路中文乱码已清理：`backend/core/intelligence.py`、`backend/core/llm_client.py`、`agents/*`、`backend/api/student.py` 的运行时提示已改为 UTF-8 中文。
+
+## 已验证
+
+- 本地通过：`python test_product_flows.py`
+- 本地通过：`$env:PYTHONIOENCODING='utf-8'; python test_flask.py`
+- 本地通过：`$env:PYTHONIOENCODING='utf-8'; python test_websocket.py`
+- 150 容器内验证通过：求助关键词触发、否定求助不触发、L1/L2/L3 仲裁、`60°` 等价判定正确。
+
+## 150 同步状态
+
+- 服务器：`150.158.3.192`
+- 线上目录：`/opt/tca-system-v2.0`
+- 线上端口：`8502`
+- GitHub 分支：`prod-150`
+- 最新目标：保持 150 服务器代码、本地 `tca-system-prod-150`、GitHub `prod-150` 三者一致。

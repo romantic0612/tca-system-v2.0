@@ -149,6 +149,7 @@ def submit_answer():
             evaluation.error_type,
             message=answer,
             time_spent=time_spent,
+            confidence=evaluation.confidence,
         )
         trigger_event_id = record_trigger(
             cursor,
