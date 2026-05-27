@@ -143,6 +143,23 @@ def submit_answer():
         llm_evaluation = evaluate_answer_with_llm(answer, question_id)
         evaluation = llm_evaluation or evaluator.evaluate(answer, question_id)
         evaluation_source = 'llm' if llm_evaluation else 'rule'
+        if getattr(evaluation, 'skip_evaluation', False):
+            conn.close()
+            return jsonify({
+                'success': True,
+                'is_correct': False,
+                'score': evaluation.score,
+                'error_type': evaluation.error_type,
+                'confidence': evaluation.confidence,
+                'key_mistake': evaluation.key_mistake,
+                'suggestion': evaluation.suggestion,
+                'standard_answer': evaluation.standard_answer,
+                'skip_evaluation': True,
+                'evaluation_source': 'skipped',
+                'triggered': False,
+                'trigger_level': 'none',
+                'trigger_strength': 'NONE',
+            })
         state = update_error_state(cursor, student_id, profile['experiment_group'], evaluation)
         trigger = detect_trigger(
             state['error_streak'],
@@ -230,6 +247,7 @@ def submit_answer():
                     'time_spent': time_spent,
                     'score': evaluation.score,
                     'error_type': evaluation.error_type,
+                    'skip_evaluation': evaluation.skip_evaluation,
                     'error_streak': state['error_streak'],
                     'trigger': trigger,
                     'agent': decision['agent']
@@ -254,9 +272,11 @@ def submit_answer():
             'next_question': next_question,
             'score': evaluation.score,
             'error_type': evaluation.error_type,
+            'confidence': evaluation.confidence,
             'key_mistake': evaluation.key_mistake,
             'suggestion': evaluation.suggestion,
             'standard_answer': evaluation.standard_answer,
+            'skip_evaluation': evaluation.skip_evaluation,
             'evaluation_source': evaluation_source,
             'error_streak': state['error_streak'],
             'triggered': trigger['triggered'],

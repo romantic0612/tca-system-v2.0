@@ -47,7 +47,7 @@ EVALUATOR_PROMPT = """
 只输出严格 JSON，不要额外文字。格式如下：
 {
   "correct": true,
-  "error_type": "calculation|concept|step|format|none",
+  "error_type": "calculation|concept|step|format|none|unknown",
   "score": 0,
   "confidence": 0.0,
   "key_mistake": "核心错误描述",
@@ -61,5 +61,10 @@ EVALUATOR_PROMPT = """
 - 如果没有用到关键知识点或明显不理解，error_type 为 concept。
 - 如果思路方向有偏但部分合理，error_type 为 step。
 - 如果内容不是可评分答案或格式不明确，error_type 为 format。
+- 如果无法稳定判断或解析，error_type 为 unknown。
 - 不要直接泄露标准答案，只描述错误类型和下一步建议。
 """.strip()
+
+
+def get_evaluator_prompt():
+    return EVALUATOR_PROMPT

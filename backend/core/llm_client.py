@@ -57,6 +57,27 @@ class ECNULlmClient:
         except (KeyError, IndexError, TypeError, AttributeError):
             return None
 
+    def chat_json(self, system_prompt, messages, model, temperature=0.1, max_tokens=600):
+        raw = self.chat(
+            system_prompt,
+            messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        if not raw:
+            return None
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", raw, re.DOTALL)
+            if not match:
+                return None
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                return None
+
 
 def clean_math_text(text):
     """Convert common LaTeX fragments from model output into readable text."""

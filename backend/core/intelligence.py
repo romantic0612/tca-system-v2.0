@@ -126,6 +126,7 @@ class EvaluationResult:
     key_mistake: str
     suggestion: str
     standard_answer: str
+    skip_evaluation: bool = False
 
     def to_dict(self):
         return asdict(self)
@@ -394,7 +395,11 @@ def update_error_state(cursor, student_id, experiment_group, evaluation):
     current_agent = state["current_agent"] or "Guide"
     now = datetime.now().isoformat()
 
-    if evaluation.correct:
+    if getattr(evaluation, "skip_evaluation", False):
+        error_streak = state["error_streak"] or 0
+        consecutive_correct = state["consecutive_correct"] or 0
+        last_error_type = state["last_error_type"] or "none"
+    elif evaluation.correct:
         error_streak = 0.0
         consecutive_correct = (state["consecutive_correct"] or 0) + 1
         last_error_type = "none"
