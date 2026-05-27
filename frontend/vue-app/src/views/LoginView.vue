@@ -1,15 +1,9 @@
 <template>
   <main class="login-view">
-    <section class="login-copy">
-      <el-tag effect="dark" type="success">Vue3 + Element Plus</el-tag>
-      <h1>TCA-System</h1>
-      <p>教师可控的自适应数学学习系统</p>
-      <div class="feature-list">
-        <span>四组实验</span>
-        <span>AI-AUTO 切换</span>
-        <span>教师 Override</span>
-        <span>实验数据导出</span>
-      </div>
+    <section class="login-header" aria-label="系统介绍">
+      <span class="brand-mark">ZR</span>
+      <h1>智融</h1>
+      <p>教师可控自适应学习系统</p>
     </section>
 
     <el-card class="login-card" shadow="always">
@@ -29,6 +23,7 @@
             autocomplete="username"
           />
         </el-form-item>
+
         <el-form-item label="密码">
           <el-input
             v-model="form.password"
@@ -40,6 +35,7 @@
             @keyup.enter="submit"
           />
         </el-form-item>
+
         <el-button
           class="login-button"
           size="large"
@@ -50,14 +46,27 @@
           登录
         </el-button>
       </el-form>
-
-      <el-divider />
-      <div class="demo-accounts">
-        <button type="button" @click="fill('20240003', '123456')">TCA 学生</button>
-        <button type="button" @click="fill('100001', 'teacher123')">教师</button>
-        <button type="button" @click="fill('900001', 'admin123')">管理员</button>
-      </div>
     </el-card>
+
+    <section class="demo-accounts" aria-label="快捷登录">
+      <span class="accounts-title">快捷登录</span>
+      <div class="account-grid">
+        <button type="button" class="account-item" @click="fill('20240003', '123456')">
+          <strong>TCA学生</strong>
+          <span>20240003</span>
+        </button>
+        <button type="button" class="account-item" @click="fill('100001', 'teacher123')">
+          <strong>教师</strong>
+          <span>100001</span>
+        </button>
+        <button type="button" class="account-item admin" @click="fill('900001', 'admin123')">
+          <strong>管理员</strong>
+          <span>900001</span>
+        </button>
+      </div>
+    </section>
+
+    <footer class="login-footer">智融 · 华东师范大学 · v2.0</footer>
   </main>
 </template>
 
@@ -101,53 +110,68 @@ async function submit() {
 <style scoped lang="scss">
 .login-view {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(360px, 460px);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 44px;
-  padding: 56px min(7vw, 92px);
+  justify-content: center;
+  gap: 22px;
+  padding: 32px 20px;
   background:
-    linear-gradient(135deg, rgba(42, 143, 234, 0.88), rgba(46, 184, 124, 0.82)),
-    #eef2f7;
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.18), transparent 26%),
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.login-copy {
+.login-header {
+  text-align: center;
   color: #fff;
+  text-shadow: 0 3px 12px rgba(21, 28, 56, 0.22);
+
+  .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 10px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
 
   h1 {
-    margin: 22px 0 10px;
-    font-size: 52px;
+    margin: 0 0 8px;
+    font-size: 42px;
     font-weight: 800;
+    letter-spacing: 4px;
   }
 
   p {
-    margin: 0 0 26px;
-    font-size: 22px;
-  }
-}
-
-.feature-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-
-  span {
-    padding: 9px 13px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.36);
+    margin: 0;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.9);
   }
 }
 
 .login-card {
-  border-radius: 18px;
+  width: min(400px, 100%);
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(18, 24, 50, 0.3);
+  overflow: hidden;
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
+
+  strong {
+    font-size: 18px;
+  }
 
   span {
     color: #8a94a6;
@@ -157,30 +181,93 @@ async function submit() {
 
 .login-button {
   width: 100%;
+  height: 46px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #2e86ab 0%, #4caf50 100%);
+  box-shadow: 0 8px 22px rgba(46, 134, 171, 0.32);
 }
 
 .demo-accounts {
+  width: min(400px, 100%);
+}
+
+.accounts-title {
+  display: block;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.account-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
+  padding: 14px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
 
-  button {
-    height: 34px;
-    border: 1px solid #d8dee9;
-    border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
+.account-item {
+  min-width: 0;
+  padding: 12px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(46, 134, 171, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: rgba(46, 134, 171, 0.34);
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  span {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+  }
+
+  &.admin {
+    background: rgba(118, 75, 162, 0.26);
   }
 }
 
-@media (max-width: 820px) {
+.login-footer {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+}
+
+@media (max-width: 520px) {
   .login-view {
-    grid-template-columns: 1fr;
-    padding: 28px 18px;
+    padding: 24px 14px;
   }
 
-  .login-copy h1 {
-    font-size: 40px;
+  .login-header h1 {
+    font-size: 36px;
+  }
+
+  .account-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
