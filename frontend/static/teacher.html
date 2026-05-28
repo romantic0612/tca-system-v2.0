@@ -34,14 +34,14 @@
     --gradient-guide: linear-gradient(135deg, #667eea, #764ba2);
     --gradient-tutor: linear-gradient(135deg, #2E86AB, #4CAF50);
     --gradient-evaluator: linear-gradient(135deg, #FF9800, #F44336);
-    --shadow-teacher-card: 0 4px 15px rgba(0,0,0,0.1);
-    --shadow-btn: 0 4px 15px rgba(46,134,171,0.3);
-    --shadow-btn-hover: 0 6px 20px rgba(46,134,171,0.4);
-    --shadow-text: 2px 2px 4px rgba(0,0,0,0.2);
+    --shadow-teacher-card: none;
+    --shadow-btn: 0 2px 8px rgba(46,134,171,0.15);
+    --shadow-btn-hover: 0 4px 12px rgba(46,134,171,0.25);
+    --shadow-text: none;
     --shadow-input-focus: 0 0 0 3px rgba(46,134,171,0.1);
-    --border-radius-lg: 20px;
-    --border-radius-md: 12px;
-    --border-radius-sm: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-sm: 6px;
     --color-group-sa: #9E9E9E;
     --color-group-exp: #667eea;
     --color-group-ai-auto: #00BCD4;
@@ -54,20 +54,20 @@
     font-family: var(--font-sans);
     display: flex;
     justify-content: center;
-    padding: 16px;
+    padding: 0;
     height: 100vh;
     overflow: hidden;
   }
   .card {
-    background: var(--color-background-primary);
-    border-radius: var(--border-radius-lg);
-    border: 0.5px solid var(--color-border-tertiary);
+    background: #fff;
+    border-radius: 0;
+    border: none;
     max-width: 1280px;
     width: 100%;
-    height: calc(100vh - 32px);
+    height: 100vh;
     min-height: 0;
     overflow: hidden;
-    box-shadow: var(--shadow-teacher-card);
+    box-shadow: none;
     display: flex;
     flex-direction: column;
   }
@@ -76,9 +76,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(10px);
+    border-bottom: none;
+    background: #fff;
   }
   .topbar-title {
     font-size: 14px;
@@ -115,10 +114,11 @@
   /* 左侧面板 (40%) */
   .left-panel {
     width: 40%;
-    border-right: 0.5px solid var(--color-border-tertiary);
+    border-right: none;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    background: rgba(255,255,255,0.5);
   }
 
   /* 可折叠区域通用 */
@@ -132,7 +132,7 @@
     transition: background 0.15s;
   }
   .collapsible-header:hover {
-    background: var(--color-background-secondary);
+    background: rgba(0,0,0,0.02);
   }
   .collapsible-title {
     font-size: 13px;
@@ -140,7 +140,7 @@
   }
 
   .pending-section {
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
     position: relative;
   }
   .pending-body {
@@ -181,12 +181,12 @@
   }
   .pending-item {
     padding: 8px 12px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
   }
   .pending-item.urgent {
-    background: var(--color-c-red-50);
-    border-left: 4px solid #ff4d4f;
-    animation: pulse 1.4s ease-in-out infinite;
+    background: transparent;
+    border-left: none;
+    animation: none;
   }
   .pending-item-header {
     display: flex;
@@ -280,7 +280,7 @@
   }
   .student-item {
     padding: 10px 12px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -356,7 +356,7 @@
 
   .student-info-bar {
     padding: 8px 14px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -377,7 +377,7 @@
 
   .question-nav-bar {
     padding: 8px 14px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
   }
   .question-nav-row {
     display: flex;
@@ -386,16 +386,16 @@
   }
   .nav-arrow {
     font-size: 14px;
-    padding: 2px 10px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
-    background: white;
+    padding: 2px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
     cursor: pointer;
     line-height: 1.4;
     font-family: var(--font-sans);
   }
   .nav-arrow:hover {
-    background: var(--color-background-secondary);
+    background: rgba(0,0,0,0.04);
   }
   .question-center {
     flex: 1;
@@ -431,7 +431,7 @@
 
   .chat-history {
     flex: 1;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -457,38 +457,43 @@
     margin-bottom: 8px;
   }
   .history-toggle {
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: 999px;
-    background: white;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
     color: var(--color-c-blue-600);
     cursor: pointer;
     font-size: 11px;
-    padding: 3px 10px;
+    padding: 3px 8px;
     font-family: var(--font-sans);
   }
+  .history-toggle:hover {
+    background: rgba(0,0,0,0.04);
+  }
   .history-message {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    background: white;
+    border: none;
+    border-radius: 0;
+    padding: 6px 0;
+    margin-bottom: 6px;
+    background: transparent;
     color: #374151;
   }
   .history-message.student {
     margin-left: 18%;
-    background: #ecfdf5;
-    border-color: #bbf7d0;
+    background: transparent;
+    border-color: transparent;
   }
   .history-message.agent {
     margin-right: 10%;
-    background: #f8fafc;
+    background: transparent;
   }
   .history-message.teacher {
-    border-left: 3px solid var(--color-c-amber-600);
-    background: #fffbeb;
+    border-left: 4px solid #FF9800;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 8px 12px;
   }
   .history-message.system {
-    background: #f9fafb;
+    background: transparent;
     color: var(--color-text-secondary);
   }
   .history-message-meta {
@@ -520,12 +525,12 @@
     font-weight: 600;
   }
   .diagnosis-card {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-left: 3px solid var(--color-c-amber-600);
-    border-radius: var(--border-radius-md);
-    padding: 10px 12px;
+    border: none;
+    border-left: none;
+    border-radius: 0;
+    padding: 0;
     margin-bottom: 8px;
-    background: #fffaf0;
+    background: transparent;
   }
   .diagnosis-title {
     font-size: 13px;
@@ -551,7 +556,7 @@
   .diagnosis-tag {
     font-size: 11px;
     padding: 2px 7px;
-    border: 0.5px solid #fde68a;
+    border: none;
     border-radius: 999px;
     background: #fffbeb;
     color: #92400e;
@@ -569,13 +574,13 @@
     word-break: break-word;
     margin-top: 6px;
     padding: 8px;
-    background: white;
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
   }
 
   .intervention-section {
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    border-bottom: none;
   }
   .intervention-body {
     padding: 8px 14px;
@@ -589,15 +594,15 @@
     flex: 1;
     padding: 6px 8px;
     font-size: 11px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-border-secondary);
+    border-radius: 6px;
     background: white;
     cursor: pointer;
     font-family: var(--font-sans);
     transition: all 0.1s;
   }
   .btn-intervene:hover {
-    border-color: var(--color-c-blue-400);
+    background: rgba(0,0,0,0.04);
   }
   .btn-intervene:disabled,
   .btn-send-intervene:disabled,
@@ -610,12 +615,14 @@
     background: white;
   }
   .btn-intervene.hint {
-    background: var(--color-c-amber-50);
-    border-color: var(--color-c-amber-200);
+    background: white;
+    color: var(--color-c-amber-800);
+    border-color: var(--color-c-amber-600);
   }
   .btn-intervene.switch {
-    background: #fef2f2;
-    border-color: #fecdd3;
+    background: white;
+    color: var(--color-c-coral-600);
+    border-color: var(--color-c-coral-600);
   }
   .intervention-form {
     display: flex;
@@ -635,12 +642,13 @@
   .select-group select {
     width: 100%;
     padding: 6px 8px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0;
     font-size: 12px;
     font-family: var(--font-sans);
     outline: none;
-    background: white;
+    background: transparent;
   }
   .text-group {
     flex: 1;
@@ -654,9 +662,10 @@
   .intervention-textarea {
     width: 100%;
     height: 64px;
-    padding: 8px 10px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
+    padding: 6px 0;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-radius: 0;
     font-size: 12px;
     line-height: 1.5;
     resize: vertical;
@@ -666,8 +675,8 @@
     transition: border-color 0.2s;
   }
   .intervention-textarea:focus {
-    border-color: var(--color-c-blue-600);
-    box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+    border-bottom-color: var(--color-c-blue-600);
+    box-shadow: none;
   }
   .send-btn-group {
     width: 60px;
@@ -680,24 +689,24 @@
     background: var(--gradient-btn);
     color: white;
     border: none;
-    border-radius: var(--border-radius-md);
+    border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
-    box-shadow: var(--shadow-btn);
+    box-shadow: 0 2px 8px rgba(46,134,171,0.15);
     transition: all 0.3s ease;
     font-family: var(--font-sans);
   }
   .btn-send-intervene:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-btn-hover);
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(46,134,171,0.25);
   }
   .permission-note {
     display: none;
     margin-top: 8px;
-    padding: 8px 10px;
-    border: 0.5px solid var(--color-c-amber-200);
-    border-radius: var(--border-radius-md);
-    background: var(--color-c-amber-50);
+    padding: 6px 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: var(--color-c-amber-800);
     font-size: 11px;
     line-height: 1.5;
@@ -730,9 +739,10 @@
     align-items: center;
     gap: 10px;
     padding: 8px 14px;
-    border-top: 0.5px solid var(--color-border-tertiary);
-    background: rgba(255,255,255,0.15);
+    border-top: none;
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
+    border-radius: 12px;
     flex-shrink: 0;
   }
   .notification-bar.show {
@@ -767,23 +777,23 @@
     max-width: 400px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    border-radius: 12px;
-    padding: 16px 20px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     animation: slideInFromRight 0.3s ease;
-    border-left: 4px solid #FF9800;
+    border-left: none;
     cursor: pointer;
     transition: all 0.3s ease;
   }
   .websocket-toast:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
   .websocket-toast--help {
-    border-left-color: #ff4d4f;
+    border-left: 4px solid #F44336;
   }
   .websocket-toast--switch {
-    border-left-color: #4CAF50;
+    border-left: 4px solid #4CAF50;
   }
   .websocket-toast-title {
     font-size: 14px;
@@ -809,7 +819,7 @@
 
   .footer {
     padding: 8px 16px;
-    border-top: 0.5px solid var(--color-border-tertiary);
+    border-top: none;
     font-size: 11px;
     color: var(--color-text-tertiary);
     text-align: center;
@@ -823,6 +833,260 @@
   .collapsed .log-body {
     display: none;
   }
+/* ───────────── 移动端响应式适配 ───────────── */
+@media (max-width: 768px) {
+  body { overflow: auto; padding: 0; height: auto; min-height: 100vh; }
+
+  /* ── 顶栏 ── */
+  .topbar { padding: 8px 12px; }
+  .topbar-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+  .mobile-back-btn {
+    display: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 14px;
+    color: var(--color-c-blue-600);
+    font-weight: 500;
+    white-space: nowrap;
+    min-height: 44px;
+    line-height: 44px;
+  }
+  .mobile-back-btn.show { display: inline-block; }
+  .topbar-role { display: none; }
+  .topbar-right { gap: 8px; }
+
+  /* ── 主布局：单列 ── */
+  .card { max-width: none; height: auto; min-height: 100vh; }
+  .main-layout { flex-direction: column; }
+
+  /* ── 左侧列表页（移动端首页） ── */
+  .left-panel {
+    width: 100%;
+    background: rgba(255,255,255,0.5);
+  }
+  .left-panel.mobile-hidden { display: none; }
+
+  /* 待处理请求 — 触摸友好 */
+  .pending-item {
+    padding: 12px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .pending-item:last-child { border-bottom: none; }
+  .pending-item-header { flex-wrap: wrap; gap: 6px; }
+  .pending-tags { flex-wrap: wrap; gap: 4px; }
+  .tag-student { font-size: 13px; }
+  .pending-desc { font-size: 12px; margin-top: 4px; }
+  .btn-sm {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  .pending-actions { margin-left: 0; width: 100%; justify-content: flex-end; padding-top: 4px; }
+
+  /* 学生列表 — 触摸友好 */
+  .student-item { padding: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .student-name { font-size: 14px; }
+  .student-preview { font-size: 12px; }
+  .student-meta-line { font-size: 11px; }
+  .student-meta-line:last-child { display: none; } /* 隐藏上次活动时间 */
+  .btn-detail {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  /* ── 右侧详情页（全屏覆盖） ── */
+  .right-panel {
+    display: none;
+    width: 100%;
+    position: relative;
+  }
+  .right-panel.mobile-active {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  /* 详情页 — 学生信息 + 题目导航（紧凑） */
+  .right-panel.mobile-active .student-info-bar {
+    padding: 6px 12px;
+    flex-shrink: 0;
+  }
+  .right-panel.mobile-active .info-name { font-size: 14px; }
+  .right-panel.mobile-active .info-mode { font-size: 12px; }
+  .right-panel.mobile-active .info-help { display: none; }
+
+  .right-panel.mobile-active .question-nav-bar {
+    padding: 6px 12px;
+    flex-shrink: 0;
+  }
+  .right-panel.mobile-active .question-label { font-size: 12px; }
+  .right-panel.mobile-active .question-meta { display: none; } /* 隐藏知识点等元数据 */
+  .right-panel.mobile-active .question-text {
+    font-size: 12px;
+    max-height: 36px;
+    overflow: hidden;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* 详情页 — 对话历史（可滚动填充） */
+  .right-panel.mobile-active .chat-history {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .right-panel.mobile-active .chat-history-body {
+    flex: 1;
+    padding: 8px 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .right-panel.mobile-active .history-message { padding: 6px 0; }
+  .right-panel.mobile-active .history-message-meta span:last-child { font-size: 10px; }
+  .right-panel.mobile-active .history-content { font-size: 13px; line-height: 1.6; }
+
+  /* 诊断卡片 — 移动端紧凑 */
+  .right-panel.mobile-active .diagnosis-card { margin-bottom: 6px; }
+  .right-panel.mobile-active .diagnosis-title { font-size: 12px; }
+  .right-panel.mobile-active .diagnosis-row { font-size: 11px; line-height: 1.5; }
+  .right-panel.mobile-active .diagnosis-tags { gap: 4px; }
+  .right-panel.mobile-active .diagnosis-tag { font-size: 10px; padding: 2px 6px; }
+  .right-panel.mobile-active .raw-diagnosis { display: none; } /* 隐藏技术诊断 */
+
+  /* ── 干预操作栏 — 吸底 ── */
+  .right-panel.mobile-active .intervention-section {
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+  }
+  .right-panel.mobile-active .intervention-body { padding: 8px 12px; }
+
+  /* 三个大按钮 — 卡片式、彩色 */
+  .right-panel.mobile-active .intervention-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 0;
+  }
+  .right-panel.mobile-active .btn-intervene {
+    flex: 1;
+    padding: 12px 4px;
+    min-height: 48px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .right-panel.mobile-active .btn-intervene:active {
+    transform: scale(0.96);
+  }
+  .right-panel.mobile-active .btn-intervene.keep {
+    background: linear-gradient(135deg, #FFD54F, #FFB300);
+    color: #5D4037;
+    box-shadow: 0 2px 8px rgba(255,179,0,0.3);
+  }
+  .right-panel.mobile-active .btn-intervene.hint {
+    background: linear-gradient(135deg, #64B5F6, #1E88E5);
+    color: white;
+    box-shadow: 0 2px 8px rgba(30,136,229,0.3);
+  }
+  .right-panel.mobile-active .btn-intervene.switch {
+    background: linear-gradient(135deg, #EF5350, #C62828);
+    color: white;
+    box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+  }
+
+  /* 干预表单 — 可折叠的扩展区域 */
+  .right-panel.mobile-active .intervention-form {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+  }
+  .right-panel.mobile-active .intervention-form .select-group {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .right-panel.mobile-active .intervention-form .select-group select {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 8px;
+    background: white;
+  }
+  .right-panel.mobile-active .intervention-form .select-group label {
+    display: none; /* 移动端隐藏标签，靠 placeholder */
+  }
+  .right-panel.mobile-active .text-group { width: 100%; }
+  .right-panel.mobile-active .intervention-textarea {
+    height: 48px;
+    padding: 8px;
+    font-size: 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 8px;
+    border-bottom: 0.5px solid var(--color-border-secondary);
+  }
+  .right-panel.mobile-active .intervention-textarea:focus {
+    border-color: var(--color-c-blue-600);
+    box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+  }
+  .right-panel.mobile-active .send-btn-group {
+    width: 100%;
+    padding-top: 6px;
+  }
+  .right-panel.mobile-active .btn-send-intervene {
+    padding: 10px 0;
+    font-size: 14px;
+    border-radius: 10px;
+    min-height: 44px;
+    font-weight: 600;
+  }
+  .right-panel.mobile-active .permission-note {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+
+  /* ── 隐藏非核心区域 ── */
+  .log-section { display: none; }
+  .footer { display: none; }
+  .notification-bar { display: none !important; }
+
+  /* ── WebSocket Toast ── */
+  .websocket-toast {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
+    padding: 12px 16px;
+  }
+
+  /* ── 干预按钮禁用态 ── */
+  .right-panel.mobile-active .btn-intervene:disabled {
+    opacity: 0.4;
+    filter: grayscale(1);
+  }
+}
 </style>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/js/websocket.js"></script>
@@ -831,7 +1095,7 @@
 <div class="card">
   <!-- 顶栏 -->
 <div class="topbar">
-      <div class="topbar-title">TCA-System</div>
+      <div class="topbar-title"><span class="mobile-back-btn" id="mobileBackBtn" onclick="closeMobileDetail()">← 返回</span>TCA-System</div>
       <div class="topbar-right">
         <span class="topbar-username" id="teacherName">加载中...</span>
         <span class="topbar-role">监控面板</span>
@@ -855,7 +1119,7 @@
 
       <!-- 学生列表（可折叠） -->
       <div class="student-section" id="studentSection">
-        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('studentSection')">
+        <div class="collapsible-header" onclick="toggleCollapse('studentSection')">
           <span class="collapsible-title">▾ 学生列表</span>
           <span style="font-size: 11px; color: var(--color-text-tertiary);" id="studentListSummary">加载中...</span>
         </div>
@@ -891,7 +1155,7 @@
 
       <!-- 对话历史（可折叠） -->
       <div class="chat-history" id="chatHistorySection">
-        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('chatHistorySection')">
+        <div class="collapsible-header" onclick="toggleCollapse('chatHistorySection')">
           <span class="collapsible-title" id="chatHistoryTitle">▾ 对话历史</span>
         </div>
         <div class="chat-history-body" id="chatHistoryBody">
@@ -901,7 +1165,7 @@
 
       <!-- 教师干预（可折叠） -->
       <div class="intervention-section" id="interventionSection">
-        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('interventionSection')">
+        <div class="collapsible-header" onclick="toggleCollapse('interventionSection')">
           <span class="collapsible-title">▾ 教师干预</span>
         </div>
         <div class="intervention-body">
@@ -941,7 +1205,7 @@
 
       <!-- 干预日志（可折叠） -->
       <div class="log-section" id="logSection">
-        <div class="collapsible-header" style="border-bottom: 0.5px solid var(--color-border-tertiary);" onclick="toggleCollapse('logSection')">
+        <div class="collapsible-header" onclick="toggleCollapse('logSection')">
           <span class="collapsible-title">▾ 干预日志</span>
         </div>
         <div class="log-body" id="logBody">
@@ -1524,6 +1788,7 @@ function updateStudentSummary() {
 
 // ====== 选中学生 ======
 function selectStudent(userId, silent) {
+  if (!silent) openMobileDetail();
   selectedStudentId = userId;
   highlightSelectedStudent();
 
@@ -1803,6 +2068,50 @@ function pendingItemKey(item) {
     item.desc || ''
   ].join(':');
 }
+
+// ───────────── 移动端导航 ─────────────
+function isMobile() {
+  return window.innerWidth <= 768;
+}
+
+function openMobileDetail() {
+  if (!isMobile()) return;
+  var rp = document.querySelector('.right-panel');
+  var lp = document.querySelector('.left-panel');
+  var bb = document.getElementById('mobileBackBtn');
+  if (!rp || !lp || !bb) return;
+  rp.classList.add('mobile-active');
+  lp.classList.add('mobile-hidden');
+  bb.classList.add('show');
+  document.querySelector('.card').style.height = '100vh';
+  document.querySelector('.card').style.overflow = 'hidden';
+}
+
+function closeMobileDetail() {
+  if (!isMobile()) return;
+  var rp = document.querySelector('.right-panel');
+  var lp = document.querySelector('.left-panel');
+  var bb = document.getElementById('mobileBackBtn');
+  if (!rp || !lp || !bb) return;
+  rp.classList.remove('mobile-active');
+  lp.classList.remove('mobile-hidden');
+  bb.classList.remove('show');
+  document.querySelector('.card').style.height = '';
+  document.querySelector('.card').style.overflow = '';
+}
+
+// 窗口尺寸变化时，自动重置移动端状态
+var resizeTimer = null;
+window.addEventListener('resize', function() {
+  if (resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function() {
+    if (!isMobile()) {
+      document.querySelector('.right-panel').classList.remove('mobile-active');
+      document.querySelector('.left-panel').classList.remove('mobile-hidden');
+      document.getElementById('mobileBackBtn').classList.remove('show');
+    }
+  }, 200);
+});
 
 // ====== 启动 ======
 initPage();
