@@ -118,7 +118,7 @@ class AnswerEvaluator:
             0,
             0.5,
             "输入更像提问、求助或情绪表达，已跳过答案评分。",
-            "请在答题框提交最终答案，问题讨论放在消息框。",
+            "如果这是最终答案，请在下方输入明确的答案内容。",
             STANDARD_ANSWERS.get(int(question_id or 0), ""),
             True,
         )

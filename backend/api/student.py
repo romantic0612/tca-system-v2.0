@@ -53,6 +53,28 @@ def build_teacher_notice(profile, trigger, source, message=''):
     return f'{prefix}：{level} 触发；{action}{suffix}'
 
 
+def build_evaluation_feedback(evaluation, trigger=None, state=None, decision=None):
+    if getattr(evaluation, 'skip_evaluation', False):
+        return ''
+    feedback = 'Evaluator评估：评分 ' + str(evaluation.score) + '/100'
+    if evaluation.correct:
+        feedback += '，答案正确。'
+    else:
+        feedback += '，错误类型：' + str(evaluation.error_type)
+        if evaluation.key_mistake:
+            feedback += '；' + evaluation.key_mistake
+        feedback += '。'
+    if state and state.get('error_streak') is not None:
+        feedback += ' 错误累计：' + str(round(float(state['error_streak'] or 0), 1)) + '。'
+    if trigger and trigger.get('triggered'):
+        feedback += ' 已触发：' + str(trigger.get('trigger_level')) + '（' + str(trigger.get('trigger_strength')) + '）。'
+    if decision and decision.get('switched'):
+        feedback += ' 当前模式切换为：' + str(decision.get('agent')) + '。'
+    if evaluation.suggestion:
+        feedback += ' ' + evaluation.suggestion
+    return feedback
+
+
 @student_bp.route('/progress', methods=['GET'])
 def get_progress():
     """
@@ -334,27 +356,51 @@ def chat():
         
         profile = get_student_profile(cursor, student_id)
         state_row = ensure_student_state(cursor, student_id)
-        trigger = detect_trigger(
-            state_row['error_streak'] or 0,
-            state_row['last_error_type'] or 'none',
-            message=message,
-            time_spent=0,
-        )
+        evaluation = evaluate_answer_with_llm(message, question_id) if question_id else None
+        evaluation_source = 'skipped' if evaluation and getattr(evaluation, 'skip_evaluation', False) else ('llm' if evaluation else None)
+        evaluation_feedback = ''
+        next_question = None
+
+        if evaluation and not getattr(evaluation, 'skip_evaluation', False):
+            state = update_error_state(cursor, student_id, profile['experiment_group'], evaluation)
+            trigger = detect_trigger(
+                state['error_streak'],
+                evaluation.error_type,
+                message=message,
+                time_spent=0,
+                confidence=evaluation.confidence,
+            )
+            trigger_error_type = evaluation.error_type
+            trigger_error_streak = state['error_streak']
+            current_agent_for_strategy = state['current_agent']
+            consecutive_correct = state.get('consecutive_correct', 0)
+        else:
+            trigger = detect_trigger(
+                state_row['error_streak'] or 0,
+                state_row['last_error_type'] or 'none',
+                message=message,
+                time_spent=0,
+            )
+            trigger_error_type = state_row['last_error_type'] or 'none'
+            trigger_error_streak = state_row['error_streak'] or 0
+            current_agent_for_strategy = state_row['current_agent'] or agent
+            consecutive_correct = state_row['consecutive_correct'] or 0
+
         trigger_event_id = record_trigger(
             cursor,
             student_id,
             trigger,
-            state_row['last_error_type'] or 'none',
-            state_row['error_streak'] or 0,
+            trigger_error_type,
+            trigger_error_streak,
         )
         decision = apply_group_strategy(
             cursor,
             student_id,
             profile['experiment_group'],
-            state_row['current_agent'] or agent,
+            current_agent_for_strategy,
             trigger,
             trigger_event_id,
-            state_row['consecutive_correct'] or 0,
+            consecutive_correct,
         )
         agent = decision['agent']
 
@@ -362,6 +408,35 @@ def chat():
             'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
             (student_id, agent, 'user', message, question_id, datetime.now().isoformat())
         )
+
+        if evaluation and not getattr(evaluation, 'skip_evaluation', False):
+            record_evaluation(cursor, student_id, question_id, message, evaluation)
+            cursor.execute(
+                'INSERT INTO student_progress (student_id, question_id, answer, time_spent, created_at) VALUES (?, ?, ?, ?, ?)',
+                (student_id, question_id, message, 0, datetime.now().isoformat())
+            )
+            cursor.execute(
+                'UPDATE student_progress SET is_correct = ? WHERE id = ?',
+                (evaluation.correct, cursor.lastrowid)
+            )
+            cursor.execute(
+                'SELECT current_question, total_questions FROM student_assignments WHERE student_id = ?',
+                (student_id,)
+            )
+            row = cursor.fetchone()
+            if row:
+                total = row['total_questions'] if hasattr(row, 'keys') else row[1]
+                next_question = min(int(question_id) + 1, total or 10)
+                cursor.execute(
+                    'UPDATE student_assignments SET current_question = ? WHERE student_id = ?',
+                    (next_question, student_id)
+                )
+            evaluation_feedback = build_evaluation_feedback(evaluation, trigger, state, decision)
+            if evaluation_feedback:
+                cursor.execute(
+                    'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+                    (student_id, 'Evaluator', 'system', evaluation_feedback, question_id, datetime.now().isoformat())
+                )
 
         if trigger['triggered']:
             cursor.execute('''
@@ -372,7 +447,7 @@ def chat():
                         'system_trigger', ?, ?)
             ''', (
                 student_id,
-                build_teacher_notice(profile, trigger, 'chat', message),
+                build_teacher_notice(profile, trigger, 'answer' if evaluation and not getattr(evaluation, 'skip_evaluation', False) else 'chat', message),
                 question_id,
                 datetime.now().isoformat(),
                 json_dumps_safe(trigger['diagnosis']),
@@ -450,6 +525,7 @@ def chat():
                     'question_id': question_id,
                     'agent': agent,
                     'message': message[:100],
+                    'evaluation': evaluation.to_dict() if evaluation else None,
                     'trigger': trigger,
                     'switched': decision['switched']
                 },
@@ -460,7 +536,7 @@ def chat():
                     'student_id': student_id,
                     'student_name': profile['student_name'],
                     'question_id': question_id,
-                    'content': build_teacher_notice(profile, trigger, 'chat', message),
+                    'content': build_teacher_notice(profile, trigger, 'answer' if evaluation and not getattr(evaluation, 'skip_evaluation', False) else 'chat', message),
                     'trigger_event_id': trigger_event_id,
                     'timestamp': datetime.now().isoformat()
                 }, room='teacher_room')
@@ -473,6 +549,9 @@ def chat():
             'reply': response_text,
             'agent': agent,
             'response_source': response_source,
+            'evaluation': evaluation.to_dict() if evaluation else None,
+            'evaluation_source': evaluation_source,
+            'next_question': next_question,
             'triggered': trigger['triggered'],
             'trigger_level': trigger['trigger_level'],
             'trigger_strength': trigger['trigger_strength'],

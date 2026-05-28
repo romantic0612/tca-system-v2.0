@@ -122,9 +122,9 @@
 
   /* 题目区域 */
   .question-area {
-    padding: 14px 16px;
+    padding: 14px 16px 10px;
     border-bottom: 0.5px solid var(--color-border-tertiary);
-    min-height: 148px;
+    min-height: 112px;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -154,7 +154,6 @@
   .question-nav {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
   }
   .nav-btn {
     font-size: 12px;
@@ -173,48 +172,6 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
-  .answer-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .answer-input {
-    flex: 1;
-    border: 2px solid #E8E8E8;
-    border-radius: var(--border-radius-md);
-    padding: 14px 16px;
-    font-size: 16px;
-    outline: none;
-    transition: all 0.3s ease;
-    font-family: var(--font-sans);
-    background: white;
-  }
-  .answer-input:focus {
-    border-color: #2E86AB;
-    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
-  }
-  .submit-btn {
-    padding: 14px 28px;
-    background: var(--gradient-btn);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius-md);
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: var(--shadow-btn);
-    transition: all 0.3s ease;
-    font-family: var(--font-sans);
-    white-space: nowrap;
-  }
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-btn-hover);
-  }
-  .submit-btn:active {
-    transform: translateY(0);
-  }
-
   /* 对话区域 */
   .chat-area {
     padding: 20px;
@@ -834,10 +791,6 @@
         <button class="nav-btn" id="prevBtn" disabled>← 上一题</button>
         <button class="nav-btn" id="nextBtn">下一题 →</button>
       </div>
-      <div class="answer-row">
-        <input class="answer-input" id="answerInput" placeholder="输入本题答案...">
-        <button class="submit-btn" id="submitAnswerBtn">提交</button>
-      </div>
     </div>
 
     <!-- 对话区域 -->
@@ -846,7 +799,7 @@
     <!-- 底部操作栏 -->
     <div class="bottom-bar">
       <div class="input-row">
-        <input class="chat-input" id="chatInput" placeholder="输入消息与AI对话...">
+        <input class="chat-input" id="chatInput" placeholder="输入答案、思路或消息...">
         <button class="clear-chat-btn" id="clearChatBtn" title="清空当前题对话">清空</button>
         <button class="send-btn" id="chatSendBtn">发送</button>
       </div>
@@ -1000,7 +953,7 @@ function applyConditionUI(condition) {
 function renderInitialGuide() {
   var chatArea = document.getElementById('chatArea');
   if (!chatArea || chatArea.children.length > 0) return;
-  addChatMessage('guide', '我们先看当前题目。你可以直接提交答案，也可以先说说你的思路。');
+  addChatMessage('guide', '我们先看当前题目。你可以在下方输入答案、思路或想问的问题。');
 }
 
 // ====== 退出登录 ======
@@ -1064,52 +1017,6 @@ document.getElementById('prevBtn').addEventListener('click', function() {
 document.getElementById('nextBtn').addEventListener('click', function() {
   if (currentQuestion < totalQuestions) { currentQuestion++; updateQuestionUI(); }
 });
-// 提交答案按钮
-document.getElementById('submitAnswerBtn').addEventListener('click', function() {
-  var answer = document.getElementById('answerInput').value.trim();
-  if (!answer) { alert('请输入答案'); return; }
-  // 提交答案到后端（预留API接口）
-  var data = { student_id: userId, question_id: currentQuestion, answer: answer };
-  fetch(API_BASE + '/api/student/submit-answer', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data)
-  }).then(function(r) { return r.json(); })
-    .then(function(resp) {
-      if (resp.success) {
-        document.getElementById('qAttempt').textContent = '(已提交)';
-        var feedback = '答案已提交，评分：' + (resp.score !== undefined ? resp.score + '/100' : '评分中...');
-        if (resp.error_type && resp.error_type !== 'none') {
-          feedback += '；错误类型：' + resp.error_type;
-        }
-        if (resp.error_streak !== undefined) {
-          feedback += '；错误累计：' + Number(resp.error_streak).toFixed(1);
-        }
-        if (resp.triggered) {
-          feedback += '；已触发：' + resp.trigger_level + '（' + resp.trigger_strength + '）';
-        }
-        if (resp.switched) {
-          currentAgent = resp.current_agent || currentAgent;
-          feedback += '；当前模式切换为：' + currentAgent;
-        }
-        if (resp.suggestion) {
-          feedback += '。' + resp.suggestion;
-        }
-        addChatMessage('system', feedback);
-        if (resp.explanation) {
-          addChatMessage('guide', resp.explanation);
-        }
-      } else {
-        addChatMessage('system', '答案提交失败');
-      }
-    }).catch(function() {
-      // 后端API尚未实现时本地模拟
-      addChatMessage('system', '答案已提交（离线模式）');
-    });
-  document.getElementById('answerInput').value = '';
-});
-
 function updateQuestionUI() {
   document.getElementById('qNumber').textContent = '第 ' + currentQuestion + '/' + totalQuestions + ' 题';
   document.getElementById('prevBtn').disabled = currentQuestion === 1;
@@ -1160,6 +1067,12 @@ function sendChatMessage() {
     .then(function(resp) {
       if (resp.success) {
         currentAgent = resp.agent || currentAgent;
+        if (resp.evaluation && !resp.evaluation.skip_evaluation) {
+          document.getElementById('qAttempt').textContent = '(已提交)';
+          if (resp.next_question) {
+            currentQuestion = Number(resp.next_question);
+          }
+        }
         loadChatHistory();
       } else {
         addChatMessage('system', resp.error || '消息发送失败');
@@ -1176,13 +1089,6 @@ document.getElementById('chatInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     document.getElementById('chatSendBtn').click();
-  }
-});
-
-document.getElementById('answerInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.getElementById('submitAnswerBtn').click();
   }
 });
 
