@@ -474,33 +474,38 @@ def chat():
         conn.commit()
         conn.close()
         
-        response_text = generate_agent_reply(
-            agent,
-            profile['experiment_group'],
-            question_id,
-            message,
-            history=history,
-            decision=decision,
-        )
-        response_source = 'llm' if response_text else 'template'
-        if not response_text and agent == 'Tutor':
-            response_text = f"【Tutor】我来给你更直接的分步提示：先找已知条件，再写出公式，最后代入计算。你刚才的问题是：{message[:50]}"
-        elif not response_text:
-            response_text = f"【{agent}】收到你的问题：{message[:50]}... 我们先从题目条件入手，一步步分析。"
-        if decision['explanation']:
-            response_text = decision['explanation'] + "\n\n" + response_text
-
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-                (student_id, agent, 'assistant', response_text, question_id, datetime.now().isoformat())
+        evaluated_as_answer = evaluation and not getattr(evaluation, 'skip_evaluation', False)
+        if evaluated_as_answer:
+            response_text = evaluation_feedback or build_evaluation_feedback(evaluation, trigger, state, decision)
+            response_source = 'evaluator'
+        else:
+            response_text = generate_agent_reply(
+                agent,
+                profile['experiment_group'],
+                question_id,
+                message,
+                history=history,
+                decision=decision,
             )
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
+            response_source = 'llm' if response_text else 'template'
+            if not response_text and agent == 'Tutor':
+                response_text = f"【Tutor】我来给你更直接的分步提示：先找已知条件，再写出公式，最后代入计算。你刚才的问题是：{message[:50]}"
+            elif not response_text:
+                response_text = f"【{agent}】收到你的问题：{message[:50]}... 我们先从题目条件入手，一步步分析。"
+            if decision['explanation']:
+                response_text = decision['explanation'] + "\n\n" + response_text
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO chat_messages (student_id, agent_name, message_type, content, question_id, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+                    (student_id, agent, 'assistant', response_text, question_id, datetime.now().isoformat())
+                )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
         
         # WebSocket: 推送智能体回复给学生
         try:

@@ -149,20 +149,24 @@ class AnswerEvaluator:
         answer_value = parse_number(answer)
         standard_value = parse_number(standard)
         if answer_value is not None and standard_value is not None and abs(answer_value - standard_value) <= 0.001:
-            return EvaluationResult(True, "none", 100, "high", "", "答案正确，继续保持。", standard)
+            return EvaluationResult(True, "none", 100, 1.0, "", "答案正确，继续保持。", standard)
         compact_answer = str(answer or "").strip().replace(" ", "").upper()
         compact_standard = str(standard or "").strip().replace(" ", "").upper()
         if compact_answer and compact_answer == compact_standard:
-            return EvaluationResult(True, "none", 100, "high", "", "答案正确，继续保持。", standard)
+            return EvaluationResult(True, "none", 100, 1.0, "", "答案正确，继续保持。", standard)
         return None
 
     def evaluate_with_llm(self, answer: str, question_id: int) -> EvaluationResult | None:
         if not self._looks_like_answer(answer):
             return self._skipped_result(question_id)
 
+        local = self._local_equivalence(answer, question_id)
+        if local:
+            return local
+
         client = ECNULlmClient()
         if not client.enabled:
-            return self._local_equivalence(answer, question_id)
+            return None
 
         qid = int(question_id or 0)
         prompt = (
@@ -180,6 +184,7 @@ class AnswerEvaluator:
                     model="ecnu-max",
                     temperature=0.1,
                     max_tokens=600,
+                    timeout=5,
                 )
             else:
                 raw = client.chat(
@@ -188,6 +193,7 @@ class AnswerEvaluator:
                     model=config.ECNU_LLM_EVALUATOR_MODEL,
                     temperature=0.1,
                     max_tokens=300,
+                    timeout=5,
                 )
                 data = self._parse_json_response(raw or "")
         except (TypeError, ValueError, json.JSONDecodeError):

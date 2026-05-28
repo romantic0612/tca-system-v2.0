@@ -23,7 +23,7 @@ class ECNULlmClient:
         self.api_key = config.ECNU_LLM_API_KEY
         self.timeout = config.ECNU_LLM_TIMEOUT
 
-    def chat(self, system_prompt, messages, model, temperature=0.4, max_tokens=2048):
+    def chat(self, system_prompt, messages, model, temperature=0.4, max_tokens=2048, timeout=None):
         if not self.enabled:
             return None
 
@@ -47,7 +47,7 @@ class ECNULlmClient:
         )
 
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with urllib.request.urlopen(request, timeout=timeout or self.timeout) as response:
                 data = json.loads(response.read().decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
             return None
@@ -57,13 +57,14 @@ class ECNULlmClient:
         except (KeyError, IndexError, TypeError, AttributeError):
             return None
 
-    def chat_json(self, system_prompt, messages, model, temperature=0.1, max_tokens=600):
+    def chat_json(self, system_prompt, messages, model, temperature=0.1, max_tokens=600, timeout=None):
         raw = self.chat(
             system_prompt,
             messages,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
+            timeout=timeout,
         )
         if not raw:
             return None
