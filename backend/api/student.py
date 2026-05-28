@@ -11,6 +11,7 @@ TCA-System V2.0 学生API
 
 from flask import Blueprint, request, jsonify, session
 import json
+import re
 import sqlite3
 import sys
 import os
@@ -37,6 +38,74 @@ student_bp = Blueprint('student', __name__)
 
 def json_dumps_safe(value):
     return json.dumps(value or {}, ensure_ascii=False)
+
+
+HELP_INTENT_KEYWORDS = [
+    '不会',
+    '不懂',
+    '不理解',
+    '不明白',
+    '不知道',
+    '没思路',
+    '卡住',
+    '帮帮我',
+    '帮我',
+    '教我',
+    '怎么做',
+    '怎么解',
+    '提示',
+    '求助',
+]
+
+FINAL_ANSWER_PREFIXES = [
+    '答案是',
+    '答案:',
+    '答案：',
+    '最终答案',
+    '我选',
+    '选',
+    '我认为答案是',
+    '我觉得答案是',
+]
+
+THINKING_PREFIXES = [
+    '我觉得',
+    '我想',
+    '是不是',
+    '应该是',
+    '可能是',
+    '大概是',
+    '所以是',
+]
+
+
+def classify_message_intent(message):
+    compact = re.sub(r'\s+', '', str(message or ''))
+    if not compact:
+        return 'free_chat'
+
+    if any(mark in compact for mark in ['?', '？', '吗', '呢']):
+        return 'guide_interaction'
+
+    if any(keyword in compact for keyword in HELP_INTENT_KEYWORDS):
+        return 'help_request'
+
+    if any(compact.startswith(prefix) for prefix in FINAL_ANSWER_PREFIXES):
+        return 'final_answer'
+
+    if any(compact.startswith(prefix) for prefix in THINKING_PREFIXES):
+        return 'thinking_process'
+
+    if re.fullmatch(r'[A-Da-d]', compact):
+        return 'final_answer'
+    if re.fullmatch(r'-?\d+(?:\.\d+)?(?:度|°)?', compact):
+        return 'final_answer'
+    if re.fullmatch(r'[x-zX-Z]\s*=\s*-?\d+(?:\.\d+)?', compact):
+        return 'final_answer'
+    if re.fullmatch(r'[-+*/=().0-9x-zX-Z]+(?:度|°)?', compact) and re.search(r'\d', compact):
+        return 'final_answer'
+
+    return 'free_chat'
 
 
 def build_teacher_notice(profile, trigger, source, message=''):
@@ -356,8 +425,14 @@ def chat():
         
         profile = get_student_profile(cursor, student_id)
         state_row = ensure_student_state(cursor, student_id)
-        evaluation = evaluate_answer_with_llm(message, question_id) if question_id else None
-        evaluation_source = 'skipped' if evaluation and getattr(evaluation, 'skip_evaluation', False) else ('llm' if evaluation else None)
+        message_intent = classify_message_intent(message)
+        awaiting_final_answer = message_intent != 'final_answer'
+        evaluation = evaluate_answer_with_llm(message, question_id) if question_id and message_intent == 'final_answer' else None
+        evaluation_source = (
+            'skipped_intent'
+            if message_intent != 'final_answer'
+            else ('skipped' if evaluation and getattr(evaluation, 'skip_evaluation', False) else ('llm' if evaluation else None))
+        )
         evaluation_feedback = ''
         next_question = None
 
@@ -530,6 +605,8 @@ def chat():
                     'question_id': question_id,
                     'agent': agent,
                     'message': message[:100],
+                    'message_intent': message_intent,
+                    'awaiting_final_answer': awaiting_final_answer,
                     'evaluation': evaluation.to_dict() if evaluation else None,
                     'trigger': trigger,
                     'switched': decision['switched']
@@ -556,6 +633,8 @@ def chat():
             'response_source': response_source,
             'evaluation': evaluation.to_dict() if evaluation else None,
             'evaluation_source': evaluation_source,
+            'message_intent': message_intent,
+            'awaiting_final_answer': awaiting_final_answer,
             'next_question': next_question,
             'triggered': trigger['triggered'],
             'trigger_level': trigger['trigger_level'],
