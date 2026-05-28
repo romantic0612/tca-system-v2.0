@@ -79,6 +79,18 @@
 | 实验数据导出 | 导出学生、聊天、评估、触发、教师干预核心数据 | 管理端点击“导出实验数据 (CSV)”或访问 `/api/admin/export/experiment-data.csv` |
 | 部署 | Docker 云端部署，GitHub 主线同步 | 服务器执行 `git pull` 后 `docker compose up -d --build` |
 
+### 服务器 Docker Compose 插件安装备用方式
+
+如果服务器 `apt install docker-compose-plugin` 提示找不到包，可以手动安装 Docker Compose v2 插件。`gh.llkk.cc` 是 GitHub release 文件加速代理，不是 Docker 官方源；仅在服务器无法稳定访问 GitHub 时作为备用下载方式。
+
+```bash
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -L "https://gh.llkk.cc/https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64" \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+sudo docker compose version
+```
+
 本轮验证命令：
 
 ```bash
