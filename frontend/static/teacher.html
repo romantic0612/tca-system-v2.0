@@ -2041,11 +2041,7 @@ function getQuestionInfo(questionId) {
 }
 
 function formatMessageTime(timeValue) {
-  var value = timeValue;
-  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
-    value += 'Z';
-  }
-  var now = value ? new Date(value) : new Date();
+  var now = parseDisplayTime(timeValue);
   if (Number.isNaN(now.getTime())) {
     now = new Date();
   }
@@ -2055,6 +2051,17 @@ function formatMessageTime(timeValue) {
   var time = now.getHours().toString().padStart(2,'0') + ':' +
     now.getMinutes().toString().padStart(2,'0');
   return date + ' ' + time;
+}
+
+function parseDisplayTime(timeValue) {
+  if (!timeValue) return new Date();
+  if (timeValue instanceof Date) return timeValue;
+  var value = String(timeValue).trim();
+  var hasTimezone = /[zZ]|[+-]\d\d:?\d\d$/.test(value);
+  if (!hasTimezone && /^\d{4}-\d{2}-\d{2}[ T]/.test(value)) {
+    value = value.replace(' ', 'T');
+  }
+  return new Date(value);
 }
 
 function pendingItemKey(item) {
