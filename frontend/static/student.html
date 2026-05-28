@@ -524,7 +524,8 @@
     padding: 12px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     width: min(360px, calc(100vw - 40px));
-    z-index: 1000;
+    z-index: 3000;
+    pointer-events: auto;
   }
   .help-dialog.show {
     display: block;
@@ -556,6 +557,9 @@
     color: var(--color-text-tertiary);
     line-height: 1;
     padding: 4px;
+    position: relative;
+    z-index: 3001;
+    pointer-events: auto;
   }
   .help-close:hover {
     color: var(--color-c-coral-600);
@@ -748,7 +752,7 @@
         <div class="help-dialog" id="helpDialog">
           <div class="help-dialog-header">
             <span class="help-dialog-title">向教师发送求助</span>
-            <button class="help-close" id="helpClose" type="button" aria-label="关闭求助窗口">✕</button>
+            <button class="help-close" id="helpClose" type="button" aria-label="关闭求助窗口" onclick="closeHelpDialog(event)">✕</button>
           </div>
           <textarea class="help-textarea" id="helpTextarea" placeholder="老师，我在这道题上卡住了..."></textarea>
           <div class="help-submit-row">
@@ -909,11 +913,19 @@ document.getElementById('helpTrigger').addEventListener('click', function(e) {
   }
 });
 
-document.getElementById('helpClose').addEventListener('click', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  document.getElementById('helpDialog').classList.remove('show');
-});
+function closeHelpDialog(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
+  var dialog = document.getElementById('helpDialog');
+  if (dialog) dialog.classList.remove('show');
+  return false;
+}
+
+document.getElementById('helpClose').addEventListener('click', closeHelpDialog, true);
+document.getElementById('helpClose').addEventListener('pointerdown', closeHelpDialog, true);
 
 document.addEventListener('click', function(e) {
   var dialog = document.getElementById('helpDialog');
