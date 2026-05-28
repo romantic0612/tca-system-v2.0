@@ -137,13 +137,15 @@ def generate_agent_reply(agent, experiment_group, question_id, user_message, his
     messages.append({"role": "user", "content": user_message})
     model = config.ECNU_LLM_TUTOR_MODEL if agent == "Tutor" else config.ECNU_LLM_GUIDE_MODEL
     temperature = 0.3 if agent == "Tutor" else 0.4
+    max_tokens = 520 if agent == "Tutor" else 360
     return clean_math_text(
         client.chat(
             _agent_system_prompt(agent, experiment_group),
             messages,
             model=model,
             temperature=temperature,
-            max_tokens=1200,
+            max_tokens=max_tokens,
+            timeout=8,
         )
     )
 
