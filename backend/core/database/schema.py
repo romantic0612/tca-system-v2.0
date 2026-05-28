@@ -162,7 +162,7 @@ SQLITE_SCHEMA = [
         pretest_score REAL,
         experiment_group TEXT CHECK(experiment_group IN ('SA', 'EXP', 'AI-AUTO', 'TCA')),
         current_question INTEGER DEFAULT 1,
-        total_questions INTEGER DEFAULT 10,
+        total_questions INTEGER DEFAULT 9,
         FOREIGN KEY (student_id) REFERENCES users(user_id)
     )
     ''',
@@ -280,7 +280,7 @@ MYSQL_SCHEMA = [
         pretest_score DOUBLE,
         experiment_group VARCHAR(32),
         current_question INT DEFAULT 1,
-        total_questions INT DEFAULT 10,
+        total_questions INT DEFAULT 9,
         FOREIGN KEY (student_id) REFERENCES users(user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ''',
@@ -418,6 +418,12 @@ def init_database():
             cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {column_type}')
         except Exception:
             pass
+
+    try:
+        cursor.execute('UPDATE student_assignments SET total_questions = 9')
+        cursor.execute('UPDATE student_assignments SET current_question = 9 WHERE current_question > 9')
+    except Exception:
+        pass
 
     conn.commit()
     conn.close()

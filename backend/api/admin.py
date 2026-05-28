@@ -63,7 +63,7 @@ def student_row_to_dict(row):
         'pretest_score': row['pretest_score'],
         'experiment_group': row['experiment_group'],
         'current_question': row['current_question'] or 1,
-        'total_questions': row['total_questions'] or 10,
+        'total_questions': row['total_questions'] or 9,
         'status': '已分配' if row['experiment_group'] else '待分配',
     }
 
@@ -176,7 +176,7 @@ def create_student():
     cursor.execute('''
         INSERT INTO student_assignments
         (student_id, student_name, class_id, pretest_score, experiment_group, current_question, total_questions)
-        VALUES (?, ?, ?, ?, ?, 3, 10)
+        VALUES (?, ?, ?, ?, ?, 1, 9)
     ''', (student_id, name, class_id, pretest_score, group))
     cursor.execute(
         'INSERT OR IGNORE INTO student_states (student_id, current_agent, updated_at) VALUES (?, "Guide", ?)',
@@ -327,7 +327,7 @@ def import_students():
             cursor.execute('''
                 INSERT INTO student_assignments
                 (student_id, student_name, class_id, pretest_score, experiment_group, current_question, total_questions)
-                VALUES (?, ?, ?, ?, ?, 1, 10)
+                VALUES (?, ?, ?, ?, ?, 1, 9)
             ''', (student_id, name, class_id, pretest_score, group))
             cursor.execute(
                 'INSERT OR IGNORE INTO student_states (student_id, current_agent, updated_at) VALUES (?, "Guide", ?)',

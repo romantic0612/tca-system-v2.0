@@ -1143,7 +1143,7 @@
         <div class="question-nav-row">
           <button class="nav-arrow" onclick="navigateQuestion(-1)">&lt;</button>
           <div class="question-center">
-            <span class="question-label" id="detailQNumber">第 3 题 / 共 8 题</span>
+            <span class="question-label" id="detailQNumber">第 1 题 / 共 9 题</span>
             <span class="question-score" id="detailScore">评分: —</span>
             <span class="question-status" id="detailStatus">(待观察)</span>
           </div>
@@ -1193,7 +1193,7 @@
             </div>
             <div class="text-group">
               <label>解释/提示文本</label>
-              <textarea class="intervention-textarea" id="interventionTextarea" placeholder="输入要发送给学生的解释或提示...">虽然 x≤5.625，但笔记本不能买0.625本，所以最多只能买5本。</textarea>
+              <textarea class="intervention-textarea" id="interventionTextarea" placeholder="输入要发送给学生的解释或提示...">先把题目中的等量关系写出来，再设未知数列方程。</textarea>
             </div>
             <div class="send-btn-group">
               <button class="btn-send-intervene" onclick="sendIntervention()">发送</button>
@@ -1227,7 +1227,7 @@ var API_BASE = window.location.origin;
 var studentData = [];         // 所有学生数据
 var selectedStudentId = null; // 当前选中的学生ID
 var currentDetailQ = 1;
-var totalQuestions = 10;
+var totalQuestions = 9;
 var wsClient = null;
 var pendingCount = 0;
 var pendingKeys = {};
@@ -1239,23 +1239,22 @@ var currentDetailData = null;
 var notificationItems = {};
 var currentSelectedStudent = null;
 var overrideTemplates = {
-  step_hint: '先把条件写成不等式：8x + 5 ≤ 50，再解出 x ≤ 5.625。',
-  relation: 'x 表示笔记本的本数，必须是整数，不能买0.625本。',
-  formula: '解完不等式后，还要结合实际意义取不超过5.625的最大整数。',
-  redirect: '如果卡住了，先想：最多买多少“整本”笔记本？',
-  encourage: '你已经列对了不等式，最后一步只差把结果放回真实情境里理解。'
+  step_hint: '先把题目中的数量关系写清楚，再设未知数列方程。',
+  relation: '注意未知数代表的实际含义，最后要回到题目情境检查答案是否合理。',
+  formula: '可以先列出等量关系，再化简求解。',
+  redirect: '如果卡住了，先找题目里“总量”和“单量”之间的关系。',
+  encourage: '你的思路已经接近了，继续把等量关系列完整。'
 };
 var fallbackQuestions = {
-  1: { text: '选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
-  2: { text: '选择题：请根据题干选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
-  3: { text: '小明买笔记本，每本8元，带了50元，若至少留下5元坐公交，最多能买多少本？', knowledge_point: '一元一次不等式的实际应用' },
-  4: { text: '三角形三个内角的和是多少度？', knowledge_point: '三角形内角和' },
-  5: { text: '选择题：请选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
-  6: { text: '应用题：请写出你的推理过程。', knowledge_point: '数学推理' },
-  7: { text: '计算题：请完成本题并填写最终答案。', knowledge_point: '计算能力' },
-  8: { text: '综合题：请根据题意给出答案。', knowledge_point: '综合应用' },
-  9: { text: '请完成当前题目。', knowledge_point: '综合应用' },
-  10: { text: '请完成当前题目。', knowledge_point: '综合应用' }
+  1: { text: '解方程：3(x-2)+1=x-(2x-1)', knowledge_point: '一元一次方程' },
+  2: { text: '解方程：2(x-1)=3x+5', knowledge_point: '一元一次方程' },
+  3: { text: '解方程：2x-6=-3x+9', knowledge_point: '一元一次方程' },
+  4: { text: '学校要购入两种记录本，预计花费460元，其中A种记录本每本3元，B种记录本每本2元，且购买A种记录本的数量比B种记录本的2倍还多20本。(1)求购买A和B两种记录本的数量；(2)某商店搞促销活动，A种记录本按8折销售，B种记录本按9折销售，则学校此次可以节省多少钱?', knowledge_point: '一元一次方程应用' },
+  5: { text: '一项工程需要甲、乙两队完成，已知甲队单独完成需要48天，乙队单独完成需要60天。甲队先做12天，然后甲、乙两队合作完成剩下的工作。(1)甲、乙两队合作还需要多少天完成此项工作?(2)已知甲队每天的劳务费比乙队多30元，完成这项工程共需支付劳务费7200元。则甲、乙两队每天的劳务费各是多少元?', knowledge_point: '工程问题' },
+  6: { text: '某工厂现有30m2木料，准备制作各种尺寸的方桌与凳子。如果1m2木料可制作40个方桌或制作80个凳子。A类型套桌由一个方桌和四个凳子组成，每套售价2000元，B类型套桌由一个方桌和八个凳子组成，每套售价3500元。(1)若用全部木料生产A类型套桌，且桌子、凳子恰好配套，问全部卖出可以卖多少钱?(2)若用全部木料生产A、B两种类型套桌，且桌子、凳子恰好配套，全部卖出，卖了824000元。问制作了多少套A类型套桌?', knowledge_point: '配套问题' },
+  7: { text: '某家具厂现有10立方米木材，准备用来制作方桌，其中用部分木材制作桌面，其余木材制作桌腿。已知制作一张方桌需要1张桌面和4条桌腿，1立方米木材可制作50张桌面或300条桌腿，要使制作出的桌面、桌腿恰好配套。(1)求制作桌面的木材和制作桌腿的木材分别为多少立方米?(2)若该家具厂的木材进货价为每立方米1500元，制成方桌后，每张方桌的售价为150元，则该家具厂制作的这批方桌全部售出后共获利多少元?', knowledge_point: '配套问题与利润' },
+  8: { text: '哈佳高铁建设工程中，有一路段由甲、乙两个工程队负责完成。甲工程队单独完成此项工程需60天，比乙工程队单独完成此项工程多用30天，若甲先施工6天，再由甲、乙合作完成剩余工程。(1)甲、乙还需要合作多少天完成?(2)如果甲工程队每天需工程费500元，乙工程队每天需工程费700元，若甲队先单独工作若干天再由乙工程队完成剩余的任务，支付工程队总费用24000元，求甲队工作的天数。', knowledge_point: '工程问题' },
+  9: { text: '某学校准备请甲、乙两人搬运一批图书，已知甲单独运完需要10天，乙单独运完需要20天。甲先搬运了4天，然后甲、乙两人合作运完剩下的图书。(1)甲、乙两人合作还需要多少天运完图书?(2)已知甲每天的薪酬比乙多50元，运完图书后学校共需支付薪酬2800元。则甲、乙两人每天的薪酬分别为多少元?', knowledge_point: '工程问题' }
 };
 
 // ====== 页面初始化 ======

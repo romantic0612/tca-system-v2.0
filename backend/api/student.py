@@ -161,7 +161,7 @@ def get_progress():
     {
         "success": true,
         "current_question": 3,
-        "total_questions": 10,
+        "total_questions": 9,
         "experiment_group": "TCA",
         "progress_percent": 30
     }
@@ -185,7 +185,7 @@ def get_progress():
             return jsonify({'success': False, 'error': '学生信息不存在'}), 404
         
         current = row[0] or 1
-        total = row[1] or 10
+        total = row[1] or 9
         
         return jsonify({
             'success': True,
@@ -317,7 +317,7 @@ def submit_answer():
             (student_id,)
         )
         row = cursor.fetchone()
-        total = row[1] or 10
+        total = row[1] or 9
         next_question = min(int(question_id) + 1, total)
         
         cursor.execute(
@@ -509,7 +509,7 @@ def chat():
             row = cursor.fetchone()
             if row:
                 total = row['total_questions'] if hasattr(row, 'keys') else row[1]
-                next_question = min(int(question_id) + 1, total or 10)
+                next_question = min(int(question_id) + 1, total or 9)
                 cursor.execute(
                     'UPDATE student_assignments SET current_question = ? WHERE student_id = ?',
                     (next_question, student_id)
@@ -875,7 +875,7 @@ def get_info():
             'condition': row[3],
             'experiment_group': row[3],
             'current_question': row[4] or 1,
-            'total_questions': row[5] or 10
+            'total_questions': row[5] or 9
         }
         return jsonify({
             'success': True,
@@ -884,7 +884,7 @@ def get_info():
             'class_id': row[2],
             'experiment_group': row[3],
             'current_question': row[4] or 1,
-            'total_questions': row[5] or 10,
+            'total_questions': row[5] or 9,
             'user_info': user_info
         })
     except Exception as e:
@@ -912,7 +912,7 @@ def get_condition():
             'success': True,
             'experiment_group': row[0],
             'current_question': row[1] or 1,
-            'total_questions': row[2] or 10
+            'total_questions': row[2] or 9
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -975,7 +975,7 @@ def get_student_list():
                 'experiment_group': row[3],
                 'condition': row[3],
                 'current_question': row[4] or 1,
-                'total_questions': row[5] or 10,
+                'total_questions': row[5] or 9,
                 'created_at': row[6],
                 'current_agent': row[7] or 'Guide',
                 'pending_count': row[8] or 0,
