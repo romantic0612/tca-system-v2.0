@@ -21,7 +21,7 @@ from typing import Any
 STANDARD_ANSWERS = {
     1: "A",
     2: "A",
-    3: "60",
+    3: "5",
     4: "180",
     5: "A",
     6: "A",
@@ -34,7 +34,7 @@ STANDARD_ANSWERS = {
 QUESTION_TEXTS = {
     1: "题目1",
     2: "题目2",
-    3: "已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。",
+    3: "小明买笔记本，每本8元，带了50元，若至少留下5元坐公交，最多能买多少本？",
     4: "三角形三个内角的和是多少度？",
     5: "选择题：请选择正确选项。",
     6: "题目6",
@@ -45,7 +45,7 @@ QUESTION_TEXTS = {
 }
 
 KNOWLEDGE_POINTS = {
-    3: "三角形内角和",
+    3: "一元一次不等式的实际应用",
     4: "三角形内角和",
 }
 
@@ -399,7 +399,7 @@ def update_error_state(cursor, student_id, experiment_group, evaluation):
         error_streak = state["error_streak"] or 0
         consecutive_correct = state["consecutive_correct"] or 0
         last_error_type = state["last_error_type"] or "none"
-    elif evaluation.correct:
+    elif evaluation.score > 80:
         error_streak = 0.0
         consecutive_correct = (state["consecutive_correct"] or 0) + 1
         last_error_type = "none"
@@ -503,6 +503,25 @@ def apply_group_strategy(cursor, student_id, experiment_group, current_agent, tr
         "action": TriggerEngine.get_action_by_condition(experiment_group, trigger),
     }
 
+    if current_agent == "Tutor" and consecutive_correct >= 3:
+        decision["agent"] = "Guide"
+        decision["switched"] = True
+        decision["explanation"] = "系统提示：你已经连续三题评分高于80分，系统已回切到Guide模式，接下来继续引导你自主思考。"
+        cursor.execute(
+            "UPDATE student_states SET current_agent = ?, last_trigger_level = ?, updated_at = ? WHERE student_id = ?",
+            ("Guide", "recovery", datetime.now().isoformat(), student_id),
+        )
+        cursor.execute(
+            """
+            INSERT INTO agent_switches
+            (student_id, from_agent, to_agent, switch_reason, triggered_by, trigger_event_id, created_at)
+            VALUES (?, ?, ?, ?, 'auto_recovery', ?, ?)
+            """,
+            (student_id, "Tutor", "Guide", "three_scores>80", trigger_event_id, datetime.now().isoformat()),
+        )
+        decision["mode_note"] = "连续三题评分高于80分后自动回到Guide。"
+        return decision
+
     if experiment_group == "SA":
         decision["agent"] = "Guide"
         if current_agent != "Guide":
@@ -526,25 +545,6 @@ def apply_group_strategy(cursor, student_id, experiment_group, current_agent, tr
         return decision
 
     if experiment_group == "AI-AUTO":
-        if current_agent == "Tutor" and consecutive_correct >= 3:
-            decision["agent"] = "Guide"
-            decision["switched"] = True
-            decision["explanation"] = "系统提示：你已经连续表现稳定，系统已回切到Guide模式，接下来继续引导你自主思考。"
-            cursor.execute(
-                "UPDATE student_states SET current_agent = ?, last_trigger_level = ?, updated_at = ? WHERE student_id = ?",
-                ("Guide", "recovery", datetime.now().isoformat(), student_id),
-            )
-            cursor.execute(
-                """
-                INSERT INTO agent_switches
-                (student_id, from_agent, to_agent, switch_reason, triggered_by, trigger_event_id, created_at)
-                VALUES (?, ?, ?, ?, 'auto_recovery', ?, ?)
-                """,
-                (student_id, "Tutor", "Guide", "consecutive_correct>=3", trigger_event_id, datetime.now().isoformat()),
-            )
-            decision["mode_note"] = "AI-AUTO组：连续正确后自动回到Guide。"
-            return decision
-
         if trigger["triggered"] and current_agent != "Tutor":
             decision["agent"] = "Tutor"
             decision["switched"] = True

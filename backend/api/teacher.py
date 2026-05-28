@@ -22,7 +22,7 @@ teacher_bp = Blueprint('teacher', __name__)
 QUESTION_BANK = {
     1: {'text': '选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
     2: {'text': '选择题：请根据题干选择正确选项。（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
-    3: {'text': '已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。', 'knowledge_point': '三角形内角和'},
+    3: {'text': '小明买笔记本，每本8元，带了50元，若至少留下5元坐公交，最多能买多少本？', 'knowledge_point': '一元一次不等式的实际应用'},
     4: {'text': '三角形三个内角的和是多少度？', 'knowledge_point': '三角形内角和'},
     5: {'text': '选择题：请选择正确选项。（测试题，标准答案为 A）', 'knowledge_point': '基础选择题'},
     6: {'text': '应用题：请写出你的推理过程。', 'knowledge_point': '数学推理'},

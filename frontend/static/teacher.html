@@ -1193,7 +1193,7 @@
             </div>
             <div class="text-group">
               <label>解释/提示文本</label>
-              <textarea class="intervention-textarea" id="interventionTextarea" placeholder="输入要发送给学生的解释或提示...">先把已知条件写出来：∠A=50°、∠B=70°，再想三角形三个内角的和。</textarea>
+              <textarea class="intervention-textarea" id="interventionTextarea" placeholder="输入要发送给学生的解释或提示...">虽然 x≤5.625，但笔记本不能买0.625本，所以最多只能买5本。</textarea>
             </div>
             <div class="send-btn-group">
               <button class="btn-send-intervene" onclick="sendIntervention()">发送</button>
@@ -1239,16 +1239,16 @@ var currentDetailData = null;
 var notificationItems = {};
 var currentSelectedStudent = null;
 var overrideTemplates = {
-  step_hint: '先把已知条件写出来：∠A=50°、∠B=70°，再想三角形三个内角的和。',
-  relation: '两个已知角先相加，再用180°减去它们的和。',
-  formula: '可以列式：∠C = 180° - ∠A - ∠B。',
-  redirect: '如果卡住了，先回答：三角形三个角加起来是多少度？',
-  encourage: '你已经找到关键信息了，下一步只需要把已知角相加再相减。'
+  step_hint: '先把条件写成不等式：8x + 5 ≤ 50，再解出 x ≤ 5.625。',
+  relation: 'x 表示笔记本的本数，必须是整数，不能买0.625本。',
+  formula: '解完不等式后，还要结合实际意义取不超过5.625的最大整数。',
+  redirect: '如果卡住了，先想：最多买多少“整本”笔记本？',
+  encourage: '你已经列对了不等式，最后一步只差把结果放回真实情境里理解。'
 };
 var fallbackQuestions = {
   1: { text: '选择题：下列哪个选项是正确答案？（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
   2: { text: '选择题：请根据题干选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
-  3: { text: '已知三角形ABC中，∠A=50°，∠B=70°，求∠C度数。', knowledge_point: '三角形内角和' },
+  3: { text: '小明买笔记本，每本8元，带了50元，若至少留下5元坐公交，最多能买多少本？', knowledge_point: '一元一次不等式的实际应用' },
   4: { text: '三角形三个内角的和是多少度？', knowledge_point: '三角形内角和' },
   5: { text: '选择题：请选择正确选项。（测试题，标准答案为 A）', knowledge_point: '基础选择题' },
   6: { text: '应用题：请写出你的推理过程。', knowledge_point: '数学推理' },
