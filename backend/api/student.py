@@ -139,7 +139,7 @@ def build_evaluation_feedback(evaluation, trigger=None, state=None, decision=Non
         feedback += ' 已触发：' + str(trigger.get('trigger_level')) + '（' + str(trigger.get('trigger_strength')) + '）。'
     if decision and decision.get('switched'):
         feedback += ' 当前模式切换为：' + str(decision.get('agent')) + '。'
-    if evaluation.suggestion:
+    if evaluation.suggestion and not evaluation.correct:
         feedback += ' ' + evaluation.suggestion
     return feedback
 
@@ -586,9 +586,14 @@ def chat():
         try:
             from backend.websocket.events import get_socketio
             sio = get_socketio()
+            response_agent = 'Evaluator' if evaluated_as_answer else agent
+            response_message_type = 'system' if evaluated_as_answer else 'assistant'
             sio.emit('agent_response', {
-                'agent_name': agent,
+                'agent_name': response_agent,
+                'message_type': response_message_type,
                 'response': response_text,
+                'response_source': response_source,
+                'evaluation': evaluation.to_dict() if evaluation else None,
                 'question_id': question_id,
                 'timestamp': datetime.now().isoformat()
             }, room=f'student_{student_id}')

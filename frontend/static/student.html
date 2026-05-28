@@ -865,6 +865,9 @@ function initWebSocket() {
       setTimeout(function() { loadChatHistory(currentQuestion); }, 800);
     }
   });
+  wsClient.on('agent_response', function(data) {
+    renderAgentResponse(data);
+  });
   wsClient.connect();
 }
 
@@ -990,13 +993,13 @@ function sendChatMessage() {
     .then(function(resp) {
       if (resp.success) {
         currentAgent = resp.agent || currentAgent;
+        renderAgentResponse(resp);
         if (resp.evaluation && !resp.evaluation.skip_evaluation) {
           document.getElementById('qAttempt').textContent = '(已提交)';
           if (resp.next_question) {
             currentQuestion = Number(resp.next_question);
           }
         }
-        loadChatHistory();
       } else {
         addChatMessage('system', resp.error || '消息发送失败');
       }
@@ -1006,6 +1009,20 @@ function sendChatMessage() {
       chatSending = false;
       document.getElementById('chatSendBtn').disabled = false;
     });
+}
+
+function renderAgentResponse(data) {
+  if (!data || !data.response) return;
+  if (data.question_id && Number(data.question_id) !== Number(currentQuestion)) return;
+  var type = data.message_type === 'system' || data.response_source === 'evaluator' ? 'system' : 'guide';
+  var key = [
+    'agent-response',
+    data.question_id || currentQuestion,
+    data.response_source || '',
+    data.message_type || '',
+    data.response
+  ].join('|');
+  addChatMessage(type, data.response, data.timestamp, key);
 }
 
 document.getElementById('chatInput').addEventListener('keydown', function(e) {
@@ -1020,8 +1037,15 @@ function addChatMessage(type, content, timeValue, key) {
   if (key) renderedMessageKeys[key] = true;
   content = normalizeMathText(content);
   var chatArea = document.getElementById('chatArea');
+  var contentKey = type + '|' + content;
+  for (var i = 0; i < chatArea.children.length; i++) {
+    if (chatArea.children[i].dataset && chatArea.children[i].dataset.contentKey === contentKey) {
+      return;
+    }
+  }
   var div = document.createElement('div');
   div.className = 'chat-message' + (type === 'user' ? ' msg-user' : '');
+  div.dataset.contentKey = contentKey;
   var timeStr = formatMessageTime(timeValue);
   if (type === 'guide') {
     var agentClass = currentAgent === 'Tutor' ? 'agent-tutor' : 'agent-guide';
