@@ -465,9 +465,9 @@
   }
   .clear-chat-btn {
     padding: 10px 12px;
-    background: transparent;
-    color: var(--color-text-tertiary);
-    border: none;
+    background: #fff;
+    color: var(--color-c-coral-600);
+    border: 1px solid rgba(225,29,72,0.22);
     border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
@@ -476,7 +476,7 @@
   }
   .clear-chat-btn:hover {
     color: var(--color-c-coral-600);
-    background: transparent;
+    background: rgba(225,29,72,0.06);
   }
 
   /* 求助按钮 + 对话框 (仅TCA组可见) */
@@ -548,10 +548,14 @@
     color: #111827;
   }
   .help-close {
+    appearance: none;
+    border: none;
+    background: transparent;
     cursor: pointer;
     font-size: 14px;
     color: var(--color-text-tertiary);
     line-height: 1;
+    padding: 4px;
   }
   .help-close:hover {
     color: var(--color-c-coral-600);
@@ -731,7 +735,7 @@
     <div class="bottom-bar">
       <div class="input-row">
         <input class="chat-input" id="chatInput" placeholder="输入答案、思路或消息...">
-        <button class="clear-chat-btn" id="clearChatBtn" title="清空当前题对话">清空</button>
+        <button class="clear-chat-btn" id="clearChatBtn" title="删除当前题的对话和教师干预">删除对话</button>
         <button class="send-btn" id="chatSendBtn">发送</button>
       </div>
       <!-- 求助区域（仅TCA组可见） -->
@@ -744,7 +748,7 @@
         <div class="help-dialog" id="helpDialog">
           <div class="help-dialog-header">
             <span class="help-dialog-title">向教师发送求助</span>
-            <span class="help-close" id="helpClose">✕</span>
+            <button class="help-close" id="helpClose" type="button" aria-label="关闭求助窗口">✕</button>
           </div>
           <textarea class="help-textarea" id="helpTextarea" placeholder="老师，我在这道题上卡住了..."></textarea>
           <div class="help-submit-row">
@@ -905,7 +909,9 @@ document.getElementById('helpTrigger').addEventListener('click', function(e) {
   }
 });
 
-document.getElementById('helpClose').addEventListener('click', function() {
+document.getElementById('helpClose').addEventListener('click', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
   document.getElementById('helpDialog').classList.remove('show');
 });
 
@@ -1208,24 +1214,14 @@ function scrollToOverrideCard(overrideId, questionId) {
 }
 
 function formatMessageTime(timeValue) {
-  var now = parseDisplayTime(timeValue);
-  if (Number.isNaN(now.getTime())) {
-    now = new Date();
-  }
-  return now.getHours().toString().padStart(2,'0') + ':' +
-    now.getMinutes().toString().padStart(2,'0') + ':' +
-    now.getSeconds().toString().padStart(2,'0');
+  var parts = getShanghaiTimeParts(timeValue);
+  return parts.hh + ':' + parts.mm + ':' + parts.ss;
 }
 
 function formatFullTime(timeValue) {
-  var d = parseDisplayTime(timeValue);
-  if (Number.isNaN(d.getTime())) d = new Date();
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0') + ' ' +
-    String(d.getHours()).padStart(2, '0') + ':' +
-    String(d.getMinutes()).padStart(2, '0') + ':' +
-    String(d.getSeconds()).padStart(2, '0');
+  var parts = getShanghaiTimeParts(timeValue);
+  return parts.year + '-' + parts.month + '-' + parts.day + ' ' +
+    parts.hh + ':' + parts.mm + ':' + parts.ss;
 }
 
 function parseDisplayTime(timeValue) {
@@ -1239,6 +1235,48 @@ function parseDisplayTime(timeValue) {
     value = value.replace(' ', 'T');
   }
   return new Date(value);
+}
+
+function getShanghaiTimeParts(timeValue) {
+  if (typeof timeValue === 'string') {
+    var value = timeValue.trim();
+    var localMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    var hasTimezone = /[zZ]|[+-]\d\d:?\d\d$/.test(value);
+    if (localMatch && !hasTimezone) {
+      return {
+        year: localMatch[1],
+        month: localMatch[2],
+        day: localMatch[3],
+        hh: localMatch[4],
+        mm: localMatch[5],
+        ss: localMatch[6] || '00'
+      };
+    }
+  }
+  var date = parseDisplayTime(timeValue);
+  if (Number.isNaN(date.getTime())) date = new Date();
+  var formatter = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  var values = {};
+  formatter.formatToParts(date).forEach(function(part) {
+    if (part.type !== 'literal') values[part.type] = part.value;
+  });
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hh: values.hour,
+    mm: values.minute,
+    ss: values.second
+  };
 }
 
 function loadChatHistory() {
@@ -1296,7 +1334,7 @@ function consumePendingUserMessage(content, timeValue) {
 }
 
 function clearCurrentChat() {
-  if (!confirm('清空当前题的对话历史？')) return;
+  if (!confirm('删除当前题的对话、教师干预和评估记录？')) return;
   fetch(API_BASE + '/api/student/history/clear', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1305,15 +1343,19 @@ function clearCurrentChat() {
   }).then(function(r) { return r.json(); })
     .then(function(resp) {
       if (!resp.success) {
-        alert(resp.error || '清空失败');
+        alert(resp.error || '删除失败');
         return;
       }
       renderedMessageKeys = {};
       pendingUserMessages = [];
+      latestNotificationOverride = null;
+      lastOverrideId = 0;
+      currentAgent = 'Guide';
       document.getElementById('chatArea').innerHTML = '';
       renderInitialGuide();
+      loadOverrideHistory(true);
     }).catch(function() {
-      alert('清空失败，请稍后重试');
+      alert('删除失败，请稍后重试');
     });
 }
 

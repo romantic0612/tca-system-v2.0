@@ -839,11 +839,46 @@ def clear_history():
             'DELETE FROM chat_messages WHERE student_id = ? AND question_id = ?',
             (student_id, question_id)
         )
-        deleted = cursor.rowcount
+        deleted_messages = cursor.rowcount
+        cursor.execute(
+            'DELETE FROM teacher_overrides WHERE student_id = ? AND question_id = ?',
+            (student_id, question_id)
+        )
+        deleted_overrides = cursor.rowcount
+        cursor.execute(
+            'DELETE FROM evaluation_records WHERE student_id = ? AND question_id = ?',
+            (student_id, question_id)
+        )
+        deleted_evaluations = cursor.rowcount
+        cursor.execute(
+            'DELETE FROM student_progress WHERE student_id = ? AND question_id = ?',
+            (student_id, question_id)
+        )
+        deleted_progress = cursor.rowcount
+        cursor.execute(
+            '''
+            UPDATE student_states
+            SET current_agent = 'Guide',
+                error_streak = 0,
+                last_error_type = 'none',
+                consecutive_correct = 0,
+                last_trigger_level = NULL,
+                updated_at = ?
+            WHERE student_id = ?
+            ''',
+            (datetime.now().isoformat(), student_id),
+        )
         conn.commit()
         conn.close()
 
-        return jsonify({'success': True, 'deleted': deleted})
+        return jsonify({
+            'success': True,
+            'deleted': deleted_messages + deleted_overrides + deleted_evaluations + deleted_progress,
+            'deleted_messages': deleted_messages,
+            'deleted_overrides': deleted_overrides,
+            'deleted_evaluations': deleted_evaluations,
+            'deleted_progress': deleted_progress,
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
