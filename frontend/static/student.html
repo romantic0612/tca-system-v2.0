@@ -1210,11 +1210,7 @@ function scrollToOverrideCard(overrideId, questionId) {
 }
 
 function formatMessageTime(timeValue) {
-  var value = timeValue;
-  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
-    value += 'Z';
-  }
-  var now = value ? new Date(value) : new Date();
+  var now = parseDisplayTime(timeValue);
   if (Number.isNaN(now.getTime())) {
     now = new Date();
   }
@@ -1224,11 +1220,7 @@ function formatMessageTime(timeValue) {
 }
 
 function formatFullTime(timeValue) {
-  var value = timeValue;
-  if (typeof value === 'string' && value && !/[zZ]|[+-]\d\d:?\d\d$/.test(value)) {
-    value += 'Z';
-  }
-  var d = value ? new Date(value) : new Date();
+  var d = parseDisplayTime(timeValue);
   if (Number.isNaN(d.getTime())) d = new Date();
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
@@ -1236,6 +1228,19 @@ function formatFullTime(timeValue) {
     String(d.getHours()).padStart(2, '0') + ':' +
     String(d.getMinutes()).padStart(2, '0') + ':' +
     String(d.getSeconds()).padStart(2, '0');
+}
+
+function parseDisplayTime(timeValue) {
+  if (!timeValue) return new Date();
+  if (timeValue instanceof Date) return timeValue;
+  var value = String(timeValue).trim();
+  // Backend stores local Shanghai time without a timezone suffix. Treat that as local display time;
+  // only browser-convert values that explicitly carry Z or an offset.
+  var hasTimezone = /[zZ]|[+-]\d\d:?\d\d$/.test(value);
+  if (!hasTimezone) {
+    value = value.replace(' ', 'T');
+  }
+  return new Date(value);
 }
 
 function loadChatHistory() {

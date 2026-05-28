@@ -25,6 +25,8 @@ services:
       - mysql
     env_file:
       - .env
+    environment:
+      TZ: Asia/Shanghai
     ports:
       - "${HOST_PORT:-8501}:5000"
     volumes:
