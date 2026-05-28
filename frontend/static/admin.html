@@ -28,13 +28,13 @@
     --color-c-purple-50: #f3e8ff;
     --gradient-btn: linear-gradient(135deg, #2E86AB 0%, #4CAF50 100%);
     --gradient-admin-bg: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
-    --shadow-card: 0 4px 15px rgba(0,0,0,0.1);
-    --shadow-btn: 0 4px 15px rgba(46,134,171,0.3);
-    --shadow-btn-hover: 0 6px 20px rgba(46,134,171,0.4);
-    --shadow-text: 2px 2px 4px rgba(0,0,0,0.2);
-    --border-radius-lg: 20px;
-    --border-radius-md: 12px;
-    --border-radius-sm: 8px;
+    --shadow-card: none;
+    --shadow-btn: 0 2px 8px rgba(46,134,171,0.15);
+    --shadow-btn-hover: 0 4px 12px rgba(46,134,171,0.25);
+    --shadow-text: none;
+    --border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-sm: 6px;
     --color-group-sa: #9E9E9E;
     --color-group-exp: #667eea;
     --color-group-ai-auto: #00BCD4;
@@ -47,24 +47,21 @@
     font-family: var(--font-sans);
     display: flex;
     justify-content: center;
-    padding: 20px;
+    padding: 0;
     min-height: 100vh;
   }
   .card {
-    background: var(--color-background-primary);
-    border-radius: var(--border-radius-lg);
-    border: 0.5px solid var(--color-border-tertiary);
+    background: #fff;
+    border-radius: 16px;
     max-width: 1080px;
     width: 100%;
-    overflow: hidden;
-    box-shadow: var(--shadow-card);
   }
   .topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: #fff;
   }
   .topbar-title { font-size: 14px; font-weight: 500; }
   .topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -78,6 +75,7 @@
     display: flex;
     border-bottom: 0.5px solid var(--color-border-tertiary);
     overflow-x: auto;
+    background: transparent;
   }
   .tab-item {
     padding: 10px 16px;
@@ -113,22 +111,21 @@
     border-radius: var(--border-radius-md);
     font-size: 12px;
     cursor: pointer;
-    box-shadow: var(--shadow-btn);
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(46,134,171,0.15);
     font-family: var(--font-sans);
   }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-btn-hover); }
+  .btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(46,134,171,0.25); }
   .btn-secondary {
     padding: 6px 12px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
     background: white;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
     font-size: 12px;
     cursor: pointer;
-    transition: background 0.1s;
+    color: var(--color-text-secondary);
     font-family: var(--font-sans);
   }
-  .btn-secondary:hover { background: var(--color-background-secondary); }
+  .btn-secondary:hover { border-color: var(--color-c-blue-600); color: var(--color-c-blue-600); }
   .btn-success {
     padding: 7px 14px;
     background: var(--color-c-green-600);
@@ -148,16 +145,15 @@
     margin-bottom: 16px;
   }
   .data-table th {
-    border: 0.5px solid var(--color-border-tertiary);
     padding: 8px 10px;
-    background: var(--color-background-secondary);
     text-align: left;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
   }
   .data-table td {
-    border: 0.5px solid var(--color-border-tertiary);
     padding: 8px 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
   }
   .group-tag-tca { color: #764ba2; font-weight: 500; }
   .group-tag-exp { color: #667eea; font-weight: 500; }
@@ -171,8 +167,6 @@
 
   /* 随机分组区域 */
   .random-assign-section {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
     padding: 14px;
     margin-bottom: 16px;
     background: var(--color-c-amber-50);
@@ -188,44 +182,38 @@
   .form-group label { font-size: 11px; color: var(--color-text-secondary); }
   .form-group select, .form-group input {
     padding: 6px 10px;
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
     font-size: 12px;
     font-family: var(--font-sans);
-    background: white;
+    background: transparent;
+    border-radius: 0;
+    outline: none;
+  }
+  .form-group select:focus, .form-group input:focus {
+    border-bottom-color: #667eea;
   }
 
   /* 分组统计 */
   .stats-section {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
     padding: 14px;
     margin-bottom: 16px;
   }
   .stats-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; }
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .stat-card {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
     padding: 14px;
     text-align: center;
-    transition: all 0.3s ease;
   }
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  }
-  .stat-card-tca { border-left: 4px solid #764ba2; background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 100%); }
-  .stat-card-exp { border-left: 4px solid #667eea; background: linear-gradient(180deg, #eef1ff 0%, #ffffff 100%); }
-  .stat-card-sa { border-left: 4px solid #9E9E9E; background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%); }
-  .stat-card-aiauto { border-left: 4px solid #00BCD4; background: linear-gradient(180deg, #e0f7fa 0%, #ffffff 100%); }
+  .stat-card-tca { background: linear-gradient(180deg, #f3e8ff 0%, #ffffff 100%); }
+  .stat-card-exp { background: linear-gradient(180deg, #eef1ff 0%, #ffffff 100%); }
+  .stat-card-sa { background: linear-gradient(180deg, #f5f5f5 0%, #ffffff 100%); }
+  .stat-card-aiauto { background: linear-gradient(180deg, #e0f7fa 0%, #ffffff 100%); }
   .stat-value { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
   .stat-label { font-size: 12px; color: var(--color-text-secondary); font-weight: 500; }
 
   /* 批量导入 */
   .batch-import {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
     padding: 14px;
     margin-bottom: 16px;
   }
@@ -236,28 +224,22 @@
     align-items: center;
   }
   .file-selector {
-    border: 0.5px solid var(--color-border-secondary);
-    border-radius: var(--border-radius-md);
     padding: 7px 10px;
     font-size: 12px;
     color: var(--color-text-tertiary);
     flex: 1;
-    background: white;
     cursor: pointer;
   }
 
   /* 数据导出 */
   .export-section {
-    border: 0.5px solid var(--color-border-tertiary);
-    border-radius: var(--border-radius-md);
-    padding: 14px;
+    padding: 14px 0;
   }
   .export-title { font-size: 12px; font-weight: 500; margin-bottom: 8px; }
   .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .footer {
     padding: 8px 16px;
-    border-top: 0.5px solid var(--color-border-tertiary);
     font-size: 11px;
     color: var(--color-text-tertiary);
     text-align: center;
@@ -276,11 +258,11 @@
   .modal-overlay.show { display: flex; }
   .modal {
     background: white;
-    border-radius: var(--border-radius-lg);
+    border-radius: 12px;
     padding: 28px;
     width: 440px;
     max-width: 90vw;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   }
   .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #333; }
   .modal-form-group { margin-bottom: 14px; }
@@ -288,32 +270,30 @@
   .modal-form-group input, .modal-form-group select {
     width: 100%;
     padding: 10px 12px;
-    border: 2px solid #E8E8E8;
-    border-radius: var(--border-radius-md);
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
     font-size: 14px;
     outline: none;
     font-family: var(--font-sans);
-    transition: all 0.3s ease;
-    background: white;
+    background: transparent;
+    border-radius: 0;
   }
   .modal-form-group input:focus, .modal-form-group select:focus {
-    border-color: #2E86AB;
-    box-shadow: 0 0 0 3px rgba(46,134,171,0.1);
+    border-bottom-color: #2E86AB;
   }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   .btn-cancel {
     padding: 8px 18px;
-    border: 2px solid #2E86AB;
+    border: 1px solid var(--color-border-secondary);
     border-radius: var(--border-radius-md);
     background: white;
     font-size: 13px;
     font-weight: 600;
-    color: #2E86AB;
+    color: var(--color-text-secondary);
     cursor: pointer;
     font-family: var(--font-sans);
-    transition: all 0.3s ease;
   }
-  .btn-cancel:hover { background: #eef1ff; transform: translateY(-1px); }
+  .btn-cancel:hover { border-color: #2E86AB; color: #2E86AB; }
 
   /* 消息提示 */
   .toast {
@@ -323,12 +303,12 @@
     padding: 14px 24px;
     background: linear-gradient(135deg, #2E86AB, #4CAF50);
     color: white;
-    border-radius: var(--border-radius-md);
+    border-radius: 10px;
     font-size: 14px;
     font-weight: 500;
     z-index: 2000;
     display: none;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     animation: slideInFromRight 0.3s ease;
   }
   .toast.show { display: block; }
@@ -556,7 +536,7 @@
     </div>
     <div class="modal-form-group">
       <label>导入预览</label>
-      <div id="importPreview" style="border:0.5px solid var(--color-border-tertiary); border-radius:6px; padding:8px; min-height:60px; font-size:11px; color:var(--color-text-tertiary);">
+      <div id="importPreview" style="padding:8px; min-height:60px; font-size:11px; color:var(--color-text-tertiary);">
         选择文件后显示预览...
       </div>
     </div>
