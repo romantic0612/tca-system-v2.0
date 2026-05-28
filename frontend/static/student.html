@@ -871,10 +871,10 @@ function initWebSocket() {
 
 // ====== 根据实验条件控制UI ======
 function applyConditionUI(condition) {
-  // 帮助按钮：仅TCA组可见
+  // 帮助按钮：学生端始终可见
   var helpSection = document.getElementById('helpSection');
   if (helpSection) {
-    helpSection.style.display = (condition === 'TCA') ? '' : 'none';
+    helpSection.style.display = '';
   }
 }
 

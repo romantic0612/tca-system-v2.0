@@ -276,14 +276,14 @@
     <div class="form-group">
       <label for="username">账号</label>
       <div class="input-wrapper">
-        <input type="text" id="username" placeholder="请输入账号">
+        <input type="text" id="username" value="20240003" placeholder="请输入账号">
       </div>
     </div>
 
     <div class="form-group">
       <label for="password">密码</label>
       <div class="input-wrapper">
-        <input type="password" id="password" placeholder="请输入密码">
+        <input type="password" id="password" value="123456" placeholder="请输入密码">
         <button type="button" class="toggle-pwd" id="togglePwdBtn" onclick="togglePassword()" aria-label="显示/隐藏密码">👁️</button>
       </div>
     </div>
@@ -300,10 +300,10 @@
   <div class="accounts">
     <div class="accounts-label">— 快捷登录 —</div>
     <div class="account-grid">
-      <div class="account-item student" onclick="quickLogin('20240001','123456')">
+      <div class="account-item student" onclick="quickLogin('20240003','123456')">
         <div class="account-icon">🧑‍🎓</div>
         <div class="account-label">学生</div>
-        <div class="account-username">20240001</div>
+        <div class="account-username">20240003 · TCA</div>
       </div>
       <div class="account-item teacher" onclick="quickLogin('100001','teacher123')">
         <div class="account-icon">👩‍🏫</div>

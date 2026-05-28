@@ -267,6 +267,7 @@
   .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #333; }
   .modal-form-group { margin-bottom: 14px; }
   .modal-form-group label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
+  .modal-form-group:has(#newStudentGroup) { display: none; }
   .modal-form-group input, .modal-form-group select {
     width: 100%;
     padding: 10px 12px;
@@ -352,7 +353,7 @@
       </div>
 
       <!-- 分组统计 -->
-      <div class="stats-section">
+      <div class="stats-section" style="display:none;">
         <div class="stats-title">分组统计</div>
         <div class="stats-grid">
           <div class="stat-card stat-card-sa">
@@ -375,7 +376,7 @@
       </div>
 
       <!-- 随机分组 -->
-      <div class="random-assign-section">
+      <div class="random-assign-section" style="display:none;">
         <div class="random-assign-title">随机分组操作</div>
         <div class="random-assign-row">
           <div class="form-group">
@@ -406,8 +407,6 @@
             <th>姓名</th>
             <th>班级</th>
             <th>前测成绩</th>
-            <th>组别</th>
-            <th>状态</th>
             <th>操作</th>
           </tr>
         </thead>
@@ -415,7 +414,7 @@
       </table>
 
       <!-- 分组导出 -->
-      <div class="export-section">
+      <div class="export-section" style="display:none;">
         <div class="export-title">分组数据导出</div>
         <div class="export-buttons">
           <button class="btn-secondary" onclick="exportAssignments('csv')">导出分组结果 (CSV)</button>
@@ -653,7 +652,7 @@ function updateStats(serverStats) {
 function updateTable() {
   const tbody = document.getElementById('studentTableBody');
   if (!students.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--color-text-tertiary);">数据库暂无学生</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--color-text-tertiary);">数据库暂无学生</td></tr>';
     return;
   }
   tbody.innerHTML = students.map(s => `
@@ -662,8 +661,6 @@ function updateTable() {
       <td>${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.class_id || '-')}</td>
       <td>${s.pretest_score ?? '-'}</td>
-      <td>${s.experiment_group ? `<span class="group-tag-${s.experiment_group.toLowerCase().replace('-','')}">${s.experiment_group}</span>` : '<span style="color:var(--color-text-tertiary);">未分配</span>'}</td>
-      <td style="color:${s.experiment_group ? 'var(--color-c-green-600)' : 'var(--color-c-amber-600)'};">${s.status || (s.experiment_group ? '已分配' : '待分配')}</td>
       <td>
         <span class="action-link edit" onclick="editStudent('${s.student_id}')">编辑</span>
         <span class="action-link delete" onclick="deleteStudent('${s.student_id}')">删除</span>
@@ -778,7 +775,7 @@ function createStudent() {
   const name = document.getElementById('newStudentName').value;
   const cls = document.getElementById('newStudentClass').value;
   const score = document.getElementById('newStudentScore').value;
-  const group = document.getElementById('newStudentGroup').value;
+  const group = 'TCA';
   
   if (!id || !name) {
     showToast('学号和姓名不能为空', 'error');
@@ -818,7 +815,6 @@ function createStudent() {
     document.getElementById('newStudentName').value = '';
     document.getElementById('newStudentClass').value = '';
     document.getElementById('newStudentScore').value = '';
-    document.getElementById('newStudentGroup').value = '';
     loadDashboard();
   }).catch(() => showToast('学生创建失败', 'error'));
 }
@@ -864,8 +860,7 @@ function editStudent(id) {
   if (classId === null) return;
   const score = prompt('前测成绩（留空表示无）', student.pretest_score ?? '');
   if (score === null) return;
-  const group = prompt('组别（SA/EXP/TCA/AI-AUTO，留空表示未分配）', student.experiment_group || '');
-  if (group === null) return;
+  const group = 'TCA';
 
   fetch('/api/admin/students/' + encodeURIComponent(id), {
     method: 'PUT',

@@ -46,7 +46,7 @@ def parse_optional_score(value):
     return score
 
 
-def normalize_group(value, default=None):
+def normalize_group(value, default='TCA'):
     group = (value or '').strip().upper()
     if group in ['', '不指定', '未分配', 'NONE', 'NULL']:
         return default
@@ -152,7 +152,7 @@ def create_student():
     name = (data.get('name') or '').strip()
     class_id = (data.get('class_id') or '').strip()
     try:
-        group = normalize_group(data.get('experiment_group'), default=None)
+        group = normalize_group(data.get('experiment_group'), default='TCA')
         pretest_score = parse_optional_score(data.get('pretest_score'))
     except ValueError as exc:
         return jsonify({'success': False, 'error': str(exc)}), 400
@@ -198,7 +198,7 @@ def update_student(student_id):
     class_id = (data.get('class_id') or '').strip()
     try:
         pretest_score = parse_optional_score(data.get('pretest_score'))
-        group = normalize_group(data.get('experiment_group'), default=None)
+        group = normalize_group(data.get('experiment_group'), default='TCA')
     except ValueError as exc:
         return jsonify({'success': False, 'error': str(exc)}), 400
 
@@ -301,7 +301,7 @@ def import_students():
                 raise ValueError('姓名不能为空')
             class_id = (pick(row, '班级', 'class_id', 'class') or '').strip()
             pretest_score = parse_optional_score(pick(row, '前测成绩', 'pretest_score', 'score'))
-            group = normalize_group(pick(row, '组别', 'experiment_group', 'group'), default=None)
+            group = normalize_group(pick(row, '组别', 'experiment_group', 'group'), default='TCA')
             password = (pick(row, '密码', 'password') or '123456').strip() or '123456'
         except Exception as exc:
             errors.append({'row': index, 'error': str(exc)})
