@@ -40,6 +40,14 @@ def json_dumps_safe(value):
     return json.dumps(value or {}, ensure_ascii=False)
 
 
+def serialize_timestamp(value):
+    if value is None:
+        return None
+    if hasattr(value, 'isoformat'):
+        return value.isoformat()
+    return str(value)
+
+
 HELP_INTENT_KEYWORDS = [
     '不会',
     '不懂',
@@ -705,7 +713,7 @@ def get_history():
                 'agent': row[0],
                 'type': row[1],
                 'content': row[2],
-                'time': row[3],
+                'time': serialize_timestamp(row[3]),
                 'override_id': row[4],
             })
         

@@ -1234,10 +1234,10 @@ function parseDisplayTime(timeValue) {
   if (!timeValue) return new Date();
   if (timeValue instanceof Date) return timeValue;
   var value = String(timeValue).trim();
-  // Backend stores local Shanghai time without a timezone suffix. Treat that as local display time;
-  // only browser-convert values that explicitly carry Z or an offset.
+  // Backend stores Shanghai local timestamps without a timezone suffix. Treat those as local
+  // display time; RFC/GMT and explicit-offset values should be left for the browser parser.
   var hasTimezone = /[zZ]|[+-]\d\d:?\d\d$/.test(value);
-  if (!hasTimezone) {
+  if (!hasTimezone && /^\d{4}-\d{2}-\d{2}[ T]/.test(value)) {
     value = value.replace(' ', 'T');
   }
   return new Date(value);
