@@ -1660,11 +1660,9 @@ function renderSessionDetail(data, item) {
   var diagnosis = data.diagnosis || {};
   var l1 = diagnosis.L1 || {};
   var l2 = diagnosis.L2 || {};
-  var l3 = diagnosis.L3 || {};
   var tags = [];
-  if (l1.triggered) tags.push('连续错误/错误累计');
+  if (l1.triggered) tags.push('错误次数大于3');
   if (l2.triggered) tags.push('学生主动求助');
-  if (l3.triggered) tags.push('长时间停滞');
   if (tags.length === 0 && trigger.trigger_level) tags.push('系统触发');
 
   var severityMap = { HIGH: '高', MEDIUM: '中', LOW: '低', NONE: '无' };

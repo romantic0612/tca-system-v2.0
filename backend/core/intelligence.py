@@ -54,27 +54,21 @@ KNOWLEDGE_POINTS = {
     9: "工程问题",
 }
 
-HELP_KEYWORD_WEIGHTS = {
-    "完全不会": 3,
-    "一点不会": 3,
-    "还是不会": 3,
-    "真的不会": 3,
-    "不会": 2,
-    "不懂": 2,
-    "不理解": 2,
-    "不明白": 2,
-    "不知道": 2,
-    "看不懂": 2,
-    "卡住": 2,
-    "没思路": 2,
-    "太难": 2,
-    "帮帮我": 3,
-    "帮我": 2,
-    "教我": 2,
-    "怎么做": 2,
-    "怎么解": 2,
-    "求助": 3,
-}
+HELP_KEYWORDS = [
+    "不会",
+    "不懂",
+    "帮帮我",
+    "太难",
+    "放弃",
+    "不明白",
+    "教我",
+    "不知道怎么",
+    "没思路",
+    "卡住了",
+    "没想法",
+]
+
+HELP_KEYWORD_WEIGHTS = {keyword: 1 for keyword in HELP_KEYWORDS}
 
 HELP_NEGATION_PATTERNS = [
     r"不是\s*不会",
@@ -96,27 +90,19 @@ HELP_NEGATION_PATTERNS = [
     r"知道了",
 ]
 
-ERROR_WEIGHTS = {
-    "concept": 1.0,
-    "step": 0.8,
-    "format": 0.5,
-    "calculation": 0.6,
-    "none": 0.0,
-}
-
 GROUP_ERROR_MULTIPLIER = {
-    "SA": 0.5,
+    "SA": 1.0,
     "EXP": 1.0,
     "AI-AUTO": 1.0,
-    "TCA": 1.5,
+    "TCA": 1.0,
 }
 
 ERROR_TYPE_THRESHOLDS = {
-    "concept": 1.5,
-    "step": 2.5,
+    "concept": 3.0,
+    "step": 3.0,
     "format": 3.0,
-    "calculation": 3.5,
-    "none": 2.0,
+    "calculation": 3.0,
+    "none": 3.0,
 }
 
 TRIGGER_PRIORITY = {"L1": 3, "L2": 2, "L3": 1}
@@ -239,7 +225,7 @@ class RuleEvaluator:
 
 
 class TriggerEngine:
-    """Unified L1/L2/L3 trigger engine."""
+    """Minimal trigger engine: help keywords, error count > 3, or manual help."""
 
     error_type_thresholds = ERROR_TYPE_THRESHOLDS
 
@@ -249,28 +235,23 @@ class TriggerEngine:
 
     @classmethod
     def should_trigger_enhanced(cls, error_streak, error_type="none", message=None, time_spent=0, confidence="medium"):
-        confidence_value = normalize_confidence(confidence)
-        threshold = cls.error_type_thresholds.get(error_type, cls.error_type_thresholds["none"])
-        if confidence_value < 0.45:
-            threshold += 0.5
-
         l1 = {
-            "triggered": error_type != "none" and float(error_streak or 0) >= threshold,
-            "threshold": threshold,
+            "triggered": float(error_streak or 0) > 3,
+            "threshold": 3,
             "current_value": float(error_streak or 0),
             "error_type": error_type,
-            "confidence": round(confidence_value, 2),
+            "rule": "error_count_gt_3",
         }
         l2 = cls.detect_help_keywords(message)
-        l3_threshold = cls.get_stagnation_threshold(question_difficulty="medium")
         l3 = {
-            "triggered": int(time_spent or 0) >= l3_threshold,
+            "triggered": False,
             "stagnation_seconds": int(time_spent or 0),
-            "threshold": l3_threshold,
+            "threshold": None,
+            "disabled": True,
         }
 
         diagnosis = {"L1": l1, "L2": l2, "L3": l3}
-        levels = [level for level, result in diagnosis.items() if result["triggered"]]
+        levels = [level for level in ("L1", "L2") if diagnosis[level]["triggered"]]
         levels.sort(key=lambda level: TRIGGER_PRIORITY[level], reverse=True)
         strength = cls.calculate_strength(levels, error_streak, l2.get("weight", 0), time_spent)
         urgency = cls.calculate_urgency(error_streak, time_spent, levels)
@@ -296,7 +277,7 @@ class TriggerEngine:
                 weight += keyword_weight
 
         return {
-            "triggered": bool(detected) and not rejected and weight >= 2,
+            "triggered": bool(detected) and not rejected,
             "detected_keywords": detected,
             "weight": weight,
             "rejected": rejected,
@@ -304,21 +285,13 @@ class TriggerEngine:
 
     @classmethod
     def should_switch_by_error_type(cls, error_type, error_streak, confidence="medium"):
-        threshold = cls.error_type_thresholds.get(error_type, cls.error_type_thresholds["none"])
-        if normalize_confidence(confidence) < 0.45:
-            threshold += 0.5
-        return error_type != "none" and float(error_streak or 0) >= threshold
+        return float(error_streak or 0) > 3
 
     @staticmethod
     def update_error_streak_with_score(previous_streak, score, error_type, last_error_type=None, confidence="medium"):
         if score >= 80:
             return 0.0
-        increment = 0.5 if score >= 50 else 1.0
-        if error_type and last_error_type == error_type and error_type != "none":
-            increment += 0.5
-        if normalize_confidence(confidence) < 0.45:
-            increment *= 0.6
-        return round(float(previous_streak or 0) + increment, 2)
+        return round(float(previous_streak or 0) + 1, 2)
 
     @staticmethod
     def get_stagnation_threshold(question_difficulty="medium"):
@@ -327,11 +300,9 @@ class TriggerEngine:
     @staticmethod
     def calculate_strength(levels, error_streak, help_weight, time_spent):
         score = len(levels)
-        if "L1" in levels and float(error_streak or 0) >= 3:
+        if "L1" in levels and float(error_streak or 0) > 3:
             score += 1
-        if "L2" in levels and int(help_weight or 0) >= 4:
-            score += 1
-        if "L3" in levels and int(time_spent or 0) >= 120:
+        if "L2" in levels and int(help_weight or 0) >= 2:
             score += 1
         if score >= 4:
             return "HIGH"
@@ -344,7 +315,6 @@ class TriggerEngine:
     @staticmethod
     def calculate_urgency(error_streak, time_spent, levels):
         base = min(float(error_streak or 0) * 20, 60)
-        base += min(int(time_spent or 0) / 3, 30)
         base += len(levels) * 10
         return round(min(base, 100), 1)
 
