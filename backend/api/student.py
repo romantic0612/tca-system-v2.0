@@ -420,6 +420,7 @@ def chat():
         message = data.get('message')
         question_id = data.get('question_id')
         agent = data.get('agent', 'Guide')
+        explicit_message_intent = data.get('message_intent')
         
         if not message:
             return jsonify({'success': False, 'error': '消息不能为空'}), 400
@@ -430,7 +431,12 @@ def chat():
         
         profile = get_student_profile(cursor, student_id)
         state_row = ensure_student_state(cursor, student_id)
-        message_intent = classify_message_intent(message)
+        allowed_message_intents = {'discussion', 'thinking_process', 'help_request', 'final_answer'}
+        message_intent = (
+            explicit_message_intent
+            if explicit_message_intent in allowed_message_intents
+            else classify_message_intent(message)
+        )
         awaiting_final_answer = message_intent != 'final_answer'
         evaluation = evaluate_answer_with_llm(message, question_id) if question_id and message_intent == 'final_answer' else None
         evaluation_source = (

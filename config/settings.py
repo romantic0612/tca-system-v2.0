@@ -11,6 +11,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent.parent
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:
+    pass
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'tca-dev-secret-key-2024')
     DATABASE_PATH = os.getenv('DATABASE_PATH', str(BASE_DIR / 'data' / 'tca_system.db'))
